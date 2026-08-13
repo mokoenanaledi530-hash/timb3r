@@ -12,7 +12,30 @@ main{max-width:1180px;margin:30px auto;padding:0 18px}.hero{padding:34px;border-
 <nav><div class="brand">🌲 TIMB3R</div><span>Timber Investment Platform</span></nav>
 <main>
 <div class="hero"><h1>Grow with timber.</h1><p class="muted">Investor dashboard — Phase 2 foundation.</p></div>
-<div class="card"><h2>Sign in</h2><form id="login"><input id="email" type="email" placeholder="Email" required><input id="password" type="password" placeholder="Password" required><button>Sign in</button></form><p id="msg" class="muted"></p></div>
+ <div class="card">
+  <h2>Sign in</h2>
+
+  <form id="login">
+    <input id="email" type="email" placeholder="Email" required>
+    <input id="password" type="password" placeholder="Password" required>
+    <button type="submit">Sign in</button>
+  </form>
+
+  <p id="msg" class="muted"></p>
+
+  <hr style="margin:25px 0;border:0;border-top:1px solid #e8ece7">
+
+  <h2>Create account</h2>
+
+  <form id="register">
+    <input id="regName" type="text" placeholder="Full name" required>
+    <input id="regEmail" type="email" placeholder="Email" required>
+    <input id="regPassword" type="password" placeholder="Password (8+ characters)" minlength="8" required>
+    <button type="submit">Create account</button>
+  </form>
+
+  <p id="regMsg" class="muted"></p>
+ </div>
 <section id="app" style="display:none">
 <div class="grid"><div class="card"><div class="muted">Available</div><div id="available" class="value">R0.00</div></div><div class="card"><div class="muted">Invested</div><div id="invested" class="value">R0.00</div></div><div class="card"><div class="muted">Returns</div><div id="returns" class="value">R0.00</div></div></div>
 <div class="tabs"><button class="active" onclick="tab('plans',this)">Invest</button><button onclick="tab('portfolio',this)">Portfolio</button><button onclick="tab('transactions',this)">Transactions</button><button onclick="tab('profile',this)">Profile</button></div>
@@ -38,6 +61,27 @@ async function load(){
  $('txList').innerHTML=ts.length?`<table><tr><th>Reference</th><th>Type</th><th>Amount</th><th>Status</th></tr>${ts.map(t=>`<tr><td>${t.reference}</td><td>${t.type}</td><td>${money(t.amount)}</td><td>${t.status}</td></tr>`).join('')}</table>`:'<p class="muted">No transactions yet.</p>';
 }
 async function invest(planId){const amount=Number($('amt-'+planId).value);const r=await fetch('/api/investments',{method:'POST',headers:{...headers(),'Content-Type':'application/json'},body:JSON.stringify({planId,amount})});const d=await r.json();alert(r.ok?'Investment created: '+d.investmentId:d.error);if(r.ok)load()}
-$('login').addEventListener('submit',async e=>{e.preventDefault();const r=await fetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:$('email').value,password:$('password').value})});const d=await r.json();if(!r.ok){$('msg').textContent=d.error;return}localStorage.timb3rToken=d.token;$('msg').textContent='Signed in.';load()});
-load();
+$('login').addEventListener('submit',async e=>{$('register').addEventListener('submit',async e=>{
+  e.preventDefault();
+
+  const r=await fetch('/api/auth/register',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      name:$('regName').value,
+      email:$('regEmail').value,
+      password:$('regPassword').value
+    })
+  });
+
+  const d=await r.json();
+
+  if(!r.ok){
+    $('regMsg').textContent=d.error||'Registration failed.';
+    return;
+  }
+
+  $('regMsg').textContent='Account created! You can now sign in.';
+  $('reg').reset();
+});
 </script></body></html>
