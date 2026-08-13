@@ -141,15 +141,13 @@ app.post("/api/webhooks/payment", async (req, res) => {
 });
 
 /* Frontend catch-all */
-
 app.get("/{*splat}", (req, res) => {
   res.sendFile(
-    path.join(__dirname, "..", "public", "index.html")
+    path.join(__dirname, "Public", "index.html")
   );
 });
-
-/* Start server */
 
 app.listen(port, () => {
   console.log(`TIMB3R 0.2.0 listening on ${port}`);
 });
+
