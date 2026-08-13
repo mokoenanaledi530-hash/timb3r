@@ -2,7 +2,7 @@
   "name": "timb3r",
   "version": "0.2.0",
   "private": true,
-  "scripts": {"start":"node src/server.js","dev":"node --watch src/server.js"},
+  "scripts": {"start":"node server.js","dev":"node --watch src/server.js"},
   "dependencies": {
     "bcrypt":"^5.1.1","express":"^5.1.0","helmet":"^8.1.0",
     "jsonwebtoken":"^9.0.2","pg":"^8.16.3"
