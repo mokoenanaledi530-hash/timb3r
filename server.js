@@ -10,9 +10,9 @@ const app=express(), port=process.env.PORT||3000;
 const secret=process.env.JWT_SECRET||"development-only-secret";
 const pool=process.env.DATABASE_URL?new Pool({connectionString:process.env.DATABASE_URL,ssl:process.env.NODE_ENV==="production"?{rejectUnauthorized:false}:false}):null;
 
-app.get("/{*splat}".(helmet({contentSecurityPolicy:false}));
-app.get("/{*splat}".(express.json({limit:"1mb"}));
-app.get("/{*splat}".(express.static(path.join(__dirname,"..","public")));
+app.use(helmet({contentSecurityPolicy:false}));
+app.use(express.json({limit:"1mb"}));
+app.use(express.static(path.join(__dirname,"..","public")));
 
 const ref=()=>`T3-${new Date().toISOString().slice(0,10).replaceAll("-","")}-${crypto.randomBytes(4).toString("hex").toUpperCase()}`;
 const auth=async(req,res,next)=>{
@@ -130,5 +130,5 @@ app.post("/api/webhooks/payment",async(req,res)=>{
  return res.status(501).json({error:"Configure and verify the payment provider webhook before enabling live money movement."});
 });
 
-app.get("/{*splat}".("*",(req,res)=>res.sendFile(path.join(__dirname,"..","public","index.html")))
+app.get("/{*splat}",(req,res)=>res.sendFile(path.join(__dirname,"..","public","index.html")))
 app.listen(port,()=>console.log(`TIMB3R 0.2.0 listening on ${port}`));
