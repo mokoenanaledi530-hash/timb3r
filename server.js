@@ -24,7 +24,7 @@ async function audit(actor,action,type,id,metadata={}){
  if(pool) await pool.query("INSERT INTO audit_logs(actor_user_id,action,entity_type,entity_id,metadata) VALUES($1,$2,$3,$4,$5)",[actor,action,type,id,metadata]);
 }
 
-app.get("/{*splat}".("/api/health",async(req,res)=>{
+app.get("/api/health",async(req,res)=>{
  let database="not configured"; if(pool){try{await pool.query("SELECT 1");database="connected"}catch{database="error"}}
  res.json({app:"TIMB3R",version:"0.2.0",status:"ok",database,mode:process.env.APP_MODE||"demo"});
 });
