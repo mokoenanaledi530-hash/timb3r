@@ -130,5 +130,5 @@ app.post("/api/webhooks/payment",async(req,res)=>{
  return res.status(501).json({error:"Configure and verify the payment provider webhook before enabling live money movement."});
 });
 
-app.get("*",(req,res)=>res.sendFile(path.join(__dirname,"..","public","index.html")));
+app.get("*",(req,res)=>res.sendFile(path.join(__dirname,"..","public","index.html")))
 app.listen(port,()=>console.log(`TIMB3R 0.2.0 listening on ${port}`));
