@@ -128,7 +128,7 @@ app.get("/api/admin/audit",auth,role("admin","compliance"),async(req,res)=>{
 app.post("/api/webhooks/payment",async(req,res)=>{
  if((process.env.APP_MODE||"demo")!=="live")return res.status(202).json({received:true,mode:"demo"});
  return res.status(501).json({error:"Configure and verify the payment provider webhook before enabling live money movement."});
-});
-
-app.get(req,res)=>res.sendFile(path.join(__dirname,"..","public","index.html")))
+app.get("/{*splat}", (req, res) => {
+  res.sendFile(
+    path.join(__dirname, "..", "public", "index.html")
 app.listen(port,()=>console.log(`TIMB3R 0.2.0 listening on ${port}`));
