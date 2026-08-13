@@ -50,18 +50,18 @@ app.post("/api/auth/login",async(req,res)=>{
  res.json({token,user:{id:u.id,name:u.name,email:u.email,role:u.role,kyc_status:u.kyc_status}});
 });
 
-app.get("/{*splat}".("/api/me",auth,async(req,res)=>{
+app.get("/api/me",auth,async(req,res)=>{
  const r=await pool.query("SELECT id,name,email,role,kyc_status,referral_code,created_at FROM users WHERE id=$1",[req.user.id]);
  res.json(r.rows[0]||null);
 });
 
-app.get("/{*splat}".("/api/plans",async(req,res)=>{
+app.get("/api/plans",async(req,res)=>{
  if(!pool)return res.json([]);
  const r=await pool.query("SELECT id,name,description,min_amount,max_amount,term_days FROM investment_plans WHERE status='active' ORDER BY min_amount");
  res.json(r.rows);
 });
 
-app.get("/{*splat}".("/api/dashboard",auth,async(req,res)=>{
+app.get("/api/dashboard",auth,async(req,res)=>{
  const r=await pool.query(`
  SELECT
  COALESCE(SUM(CASE WHEN type='deposit' AND status='completed' THEN amount ELSE 0 END),0)-
@@ -77,7 +77,7 @@ app.get("/api/transactions",auth,async(req,res)=>{
  res.json(r.rows);
 });
 
-app.get("/{*splat}".("/api/investments",auth,async(req,res)=>{
+app.get("/api/investments",auth,async(req,res)=>{
  const r=await pool.query(`SELECT i.id,i.principal,i.status,i.started_at,i.maturity_at,p.name plan_name,p.term_days
  FROM investments i JOIN investment_plans p ON p.id=i.plan_id WHERE i.user_id=$1 ORDER BY i.created_at DESC`,[req.user.id]);
  res.json(r.rows);
@@ -111,13 +111,13 @@ app.post("/api/investments",auth,async(req,res)=>{
  }catch(e){await c.query("ROLLBACK");res.status(400).json({error:e.message})}finally{c.release()}
 });
 
-app.get("/{*splat}".("/api/admin/users",auth,role("admin","compliance"),async(req,res)=>{
+app.get("/api/admin/users",auth,role("admin","compliance"),async(req,res)=>{
  const r=await pool.query("SELECT id,name,email,role,kyc_status,created_at FROM users ORDER BY created_at DESC LIMIT 500");res.json(r.rows);
 });
-app.get("/{*splat}".("/api/admin/transactions",auth,role("admin","compliance"),async(req,res)=>{
+app.get("/api/admin/transactions",auth,role("admin","compliance"),async(req,res)=>{
  const r=await pool.query(`SELECT t.reference,t.type,t.amount,t.status,t.created_at,u.email FROM transactions t JOIN users u ON u.id=t.user_id ORDER BY t.created_at DESC LIMIT 500`);res.json(r.rows);
 });
-app.get("/{*splat}".("/api/admin/audit",auth,role("admin","compliance"),async(req,res)=>{
+app.get("/api/admin/audit",auth,role("admin","compliance"),async(req,res)=>{
  const r=await pool.query("SELECT action,entity_type,entity_id,metadata,created_at FROM audit_logs ORDER BY created_at DESC LIMIT 500");res.json(r.rows);
 });
 
@@ -130,5 +130,5 @@ app.post("/api/webhooks/payment",async(req,res)=>{
  return res.status(501).json({error:"Configure and verify the payment provider webhook before enabling live money movement."});
 });
 
-app.get("/{*splat}",(req,res)=>res.sendFile(path.join(__dirname,"..","public","index.html")))
+app.get(req,res)=>res.sendFile(path.join(__dirname,"..","public","index.html")))
 app.listen(port,()=>console.log(`TIMB3R 0.2.0 listening on ${port}`));
