@@ -12,7 +12,7 @@ const pool=process.env.DATABASE_URL?new Pool({connectionString:process.env.DATAB
 
 app.use(helmet({contentSecurityPolicy:false}));
 app.use(express.json({limit:"1mb"}));
-app.use(express.static(path.join(__dirname,"..","public")));
+app.use(express.static(path.join(__dirname,"public")));
 
 const ref=()=>`T3-${new Date().toISOString().slice(0,10).replaceAll("-","")}-${crypto.randomBytes(4).toString("hex").toUpperCase()}`;
 const auth=async(req,res,next)=>{
