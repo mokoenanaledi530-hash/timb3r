@@ -120,7 +120,7 @@ app.get("/api/admin/transactions",auth,role("admin","compliance"),async(req,res)
 app.get("/api/admin/audit",auth,role("admin","compliance"),async(req,res)=>{
  const r=await pool.query("SELECT action,entity_type,entity_id,metadata,created_at FROM audit_logs ORDER BY created_at DESC LIMIT 500");res.json(r.rows);
 });
-/* Production payment webhook:
+/* production payment webhook:
    Replace this demo route with the selected provider's signed webhook contract.
    It must verify signature, enforce idempotency on provider_reference,
    and only then mark the matching transaction completed.
@@ -143,7 +143,7 @@ app.post("/api/webhooks/payment", async (req, res) => {
 /* Frontend catch-all */
 app.get("/{*splat}", (req, res) => {
   res.sendFile(
-    path.join(__dirname, "Public", "index.html")
+    path.join(__dirname, "public", "index.html")
   );
 });
 
