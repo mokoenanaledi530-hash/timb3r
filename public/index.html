@@ -61,7 +61,31 @@ async function load(){
  $('txList').innerHTML=ts.length?`<table><tr><th>Reference</th><th>Type</th><th>Amount</th><th>Status</th></tr>${ts.map(t=>`<tr><td>${t.reference}</td><td>${t.type}</td><td>${money(t.amount)}</td><td>${t.status}</td></tr>`).join('')}</table>`:'<p class="muted">No transactions yet.</p>';
 }
 async function invest(planId){const amount=Number($('amt-'+planId).value);const r=await fetch('/api/investments',{method:'POST',headers:{...headers(),'Content-Type':'application/json'},body:JSON.stringify({planId,amount})});const d=await r.json();alert(r.ok?'Investment created: '+d.investmentId:d.error);if(r.ok)load()}
-$('login').addEventListener('submit',async e=>{$('register').addEventListener('submit',async e=>{
+$('login').addEventListener('submit',async e=>{
+  e.preventDefault();
+
+  const r=await fetch('/api/auth/login',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      email:$('email').value,
+      password:$('password').value
+    })
+  });
+
+  const d=await r.json();
+
+  if(!r.ok){
+    $('msg').textContent=d.error||'Sign in failed.';
+    return;
+  }
+
+  localStorage.timb3rToken=d.token;
+  $('msg').textContent='Signed in.';
+  load();
+});
+
+$('register').addEventListener('submit',async e=>{
   e.preventDefault();
 
   const r=await fetch('/api/auth/register',{
@@ -84,4 +108,3 @@ $('login').addEventListener('submit',async e=>{$('register').addEventListener('s
   $('regMsg').textContent='Account created! You can now sign in.';
   $('reg').reset();
 });
-</script></body></html>
