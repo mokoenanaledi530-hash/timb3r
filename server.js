@@ -120,15 +120,36 @@ app.get("/api/admin/transactions",auth,role("admin","compliance"),async(req,res)
 app.get("/api/admin/audit",auth,role("admin","compliance"),async(req,res)=>{
  const r=await pool.query("SELECT action,entity_type,entity_id,metadata,created_at FROM audit_logs ORDER BY created_at DESC LIMIT 500");res.json(r.rows);
 });
-
 /* Production payment webhook:
    Replace this demo route with the selected provider's signed webhook contract.
    It must verify signature, enforce idempotency on provider_reference,
-   and only then mark the matching transaction completed. */
-app.post("/api/webhooks/payment",async(req,res)=>{
- if((process.env.APP_MODE||"demo")!=="live")return res.status(202).json({received:true,mode:"demo"});
- return res.status(501).json({error:"Configure and verify the payment provider webhook before enabling live money movement."});
+   and only then mark the matching transaction completed.
+*/
+
+app.post("/api/webhooks/payment", async (req, res) => {
+  if ((process.env.APP_MODE || "demo") !== "live") {
+    return res.status(202).json({
+      received: true,
+      mode: "demo"
+    });
+  }
+
+  return res.status(501).json({
+    error:
+      "Configure and verify the payment provider webhook before enabling live money movement."
+  });
 });
 
-app.get(req,res)=>res.sendFile(path.join(__dirname,"..","public","index.html")))
-app.listen(port,()=>console.log(`TIMB3R 0.2.0 listening on ${port}`));
+/* Frontend catch-all */
+
+app.get("/{*splat}", (req, res) => {
+  res.sendFile(
+    path.join(__dirname, "..", "public", "index.html")
+  );
+});
+
+/* Start server */
+
+app.listen(port, () => {
+  console.log(`TIMB3R 0.2.0 listening on ${port}`);
+});
