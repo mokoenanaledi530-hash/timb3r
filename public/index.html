@@ -1,111 +1,853 @@
-<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>TIMB3R</title><style>
-*{box-sizing:border-box}body{margin:0;background:#f4f7f2;color:#172219;font-family:Inter,system-ui,sans-serif}
-nav{background:#12351c;color:#fff;padding:18px 6%;display:flex;justify-content:space-between;align-items:center}.brand{font-size:22px;font-weight:800}
-main{max-width:1180px;margin:30px auto;padding:0 18px}.hero{padding:34px;border-radius:22px;background:#dfeadb;margin-bottom:20px}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:16px}.card{background:#fff;border-radius:18px;padding:20px;box-shadow:0 5px 24px #10250d0c;margin-bottom:18px}.value{font-size:28px;font-weight:800;margin-top:5px}
-.muted{color:#667267}button{border:0;border-radius:10px;padding:11px 16px;background:#1d5c2b;color:white;font-weight:700;cursor:pointer}input,select{width:100%;padding:12px;border:1px solid #cbd5ca;border-radius:9px;margin:6px 0 12px}
-.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:20px 0}.tabs button{background:#dfe8dd;color:#17341e}.tabs button.active{background:#1d5c2b;color:#fff}
-.panel{display:none}.panel.active{display:block}table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:11px;border-bottom:1px solid #e8ece7}
-@media(max-width:600px){nav span{display:none}.hero{padding:25px}}
-</style></head><body>
-<nav><div class="brand">🌲 TIMB3R</div><span>Timber Investment Platform</span></nav>
-<main>
-<div class="hero"><h1>Grow with timber.</h1><p class="muted">Investor dashboard — Phase 2 foundation.</p></div>
- <div class="card">
-  <h2>Sign in</h2>
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TIMB3R</title>
 
-  <form id="login">
-    <input id="email" type="email" placeholder="Email" required>
-    <input id="password" type="password" placeholder="Password" required>
-    <button type="submit">Sign in</button>
-  </form>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#f4f7f2;color:#172219;font-family:Inter,system-ui,sans-serif}
+nav{background:#12351c;color:#fff;padding:18px 6%;display:flex;justify-content:space-between;align-items:center}
+.brand{font-size:22px;font-weight:800}
+main{max-width:1180px;margin:30px auto;padding:0 18px}
+.hero{padding:34px;border-radius:22px;background:#dfeadb;margin-bottom:20px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:16px}
+.card{background:#fff;border-radius:18px;padding:20px;box-shadow:0 5px 24px #10250d0c;margin-bottom:18px}
+.value{font-size:28px;font-weight:800;margin-top:5px}
+.muted{color:#667267}
+button{border:0;border-radius:10px;padding:11px 16px;background:#1d5c2b;color:white;font-weight:700;cursor:pointer}
+button:disabled{opacity:.6;cursor:not-allowed}
+input,select{width:100%;padding:12px;border:1px solid #cbd5ca;border-radius:9px;margin:6px 0 12px}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:20px 0}
+.tabs button{background:#dfe8dd;color:#17341e}
+.tabs button.active{background:#1d5c2b;color:#fff}
+.panel{display:none}
+.panel.active{display:block}
+table{width:100%;border-collapse:collapse}
+th,td{text-align:left;padding:11px;border-bottom:1px solid #e8ece7}
 
-  <p id="msg" class="muted"></p>
+.status-box{display:none;margin:14px 0;padding:14px;border-radius:10px;font-size:14px;line-height:1.5;white-space:pre-wrap}
+.status-box.show{display:block}
+.status-info{background:#eef5ff;color:#164477;border:1px solid #b9d4f5}
+.status-success{background:#edf8ef;color:#17652a;border:1px solid #b9dfbd}
+.status-error{background:#fff0f0;color:#9b1c1c;border:1px solid #efb4b4}
+.status-warning{background:#fff8e8;color:#795500;border:1px solid #ead28b}
+.success-text{color:#17652a;font-weight:700}
+.error-text{color:#9b1c1c;font-weight:700}
 
-  <hr style="margin:25px 0;border:0;border-top:1px solid #e8ece7">
-
-  <h2>Create account</h2>
-
-  <form id="register">
-    <input id="regName" type="text" placeholder="Full name" required>
-    <input id="regEmail" type="email" placeholder="Email" required>
-    <input id="regPassword" type="password" placeholder="Password (8+ characters)" minlength="8" required>
-    <button type="submit">Create account</button>
-  </form>
-
-  <p id="regMsg" class="muted"></p>
- </div>
-<section id="app" style="display:none">
-<div class="grid"><div class="card"><div class="muted">Available</div><div id="available" class="value">R0.00</div></div><div class="card"><div class="muted">Invested</div><div id="invested" class="value">R0.00</div></div><div class="card"><div class="muted">Returns</div><div id="returns" class="value">R0.00</div></div></div>
-<div class="tabs"><button class="active" onclick="tab('plans',this)">Invest</button><button onclick="tab('portfolio',this)">Portfolio</button><button onclick="tab('transactions',this)">Transactions</button><button onclick="tab('profile',this)">Profile</button></div>
-<div id="plans" class="panel active"><div class="card"><h2>Investment plans</h2><div id="planList"></div></div></div>
-<div id="portfolio" class="panel"><div class="card"><h2>My investments</h2><div id="portfolioList"></div></div></div>
-<div id="transactions" class="panel"><div class="card"><h2>Transaction history</h2><div id="txList"></div></div></div>
-<div id="profile" class="panel"><div class="card"><h2>Profile</h2><p id="profileText"></p><p class="muted">KYC status is shown here. Production document storage/review must be connected before live onboarding.</p></div></div>
-</section></main>
-<script>
-const $=id=>document.getElementById(id), money=n=>new Intl.NumberFormat('en-ZA',{style:'currency',currency:'ZAR'}).format(Number(n||0));
-const token=()=>localStorage.timb3rToken, headers=()=>({Authorization:'Bearer '+token()});
-function tab(id,b){document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));$(id).classList.add('active');document.querySelectorAll('.tabs button').forEach(x=>x.classList.remove('active'));b.classList.add('active')}
-async function load(){
- if(!token())return;
- const h=headers();
- const [me,db,plans,inv,tx]=await Promise.all([fetch('/api/me',{headers:h}),fetch('/api/dashboard',{headers:h}),fetch('/api/plans'),fetch('/api/investments',{headers:h}),fetch('/api/transactions',{headers:h})]);
- if(!me.ok)return;
- const u=await me.json(),b=await db.json(),ps=await plans.json(),is=await inv.json(),ts=await tx.json();
- $('app').style.display='block';$('available').textContent=money(b.available);$('invested').textContent=money(b.invested);$('returns').textContent=money(b.returns);
- $('profileText').textContent=`${u.name} · ${u.email} · KYC: ${u.kyc_status} · Referral: ${u.referral_code}`;
- $('planList').innerHTML=ps.map(p=>`<div class="card"><h3>${p.name}</h3><p class="muted">${p.description||''}</p><p>${money(p.min_amount)} – ${money(p.max_amount)} · ${p.term_days} days</p><input id="amt-${p.id}" type="number" min="${p.min_amount}" max="${p.max_amount}" placeholder="Amount (ZAR)"><button onclick="invest('${p.id}')">Invest</button></div>`).join('');
- $('portfolioList').innerHTML=is.length?is.map(i=>`<p><b>${i.plan_name}</b> — ${money(i.principal)} — ${i.status}</p>`).join(''):'<p class="muted">No investments yet.</p>';
- $('txList').innerHTML=ts.length?`<table><tr><th>Reference</th><th>Type</th><th>Amount</th><th>Status</th></tr>${ts.map(t=>`<tr><td>${t.reference}</td><td>${t.type}</td><td>${money(t.amount)}</td><td>${t.status}</td></tr>`).join('')}</table>`:'<p class="muted">No transactions yet.</p>';
+@media(max-width:600px){
+nav span{display:none}
+.hero{padding:25px}
 }
-async function invest(planId){const amount=Number($('amt-'+planId).value);const r=await fetch('/api/investments',{method:'POST',headers:{...headers(),'Content-Type':'application/json'},body:JSON.stringify({planId,amount})});const d=await r.json();alert(r.ok?'Investment created: '+d.investmentId:d.error);if(r.ok)load()}
-$('login').addEventListener('submit',async e=>{
-  e.preventDefault();
+</style>
+</head>
 
-  const r=await fetch('/api/auth/login',{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({
-      email:$('email').value,
-      password:$('password').value
-    })
-  });
+<body>
 
-  const d=await r.json();
+<nav>
+<div class="brand">🌲 TIMB3R</div>
+<span>Timber Investment Platform</span>
+</nav>
 
-  if(!r.ok){
-    $('msg').textContent=d.error||'Sign in failed.';
-    return;
-  }
+<main>
 
-  localStorage.timb3rToken=d.token;
-  $('msg').textContent='Signed in.';
-  load();
+<div class="hero">
+<h1>Grow with timber.</h1>
+<p class="muted">Investor dashboard — Phase 2 foundation.</p>
+</div>
+
+<div class="card">
+
+<h2>Sign in</h2>
+
+<form id="login">
+
+<input
+id="email"
+type="email"
+placeholder="Email"
+autocomplete="email"
+required
+>
+
+<input
+id="password"
+type="password"
+placeholder="Password"
+autocomplete="current-password"
+required
+>
+
+<button id="loginBtn" type="submit">
+Sign in
+</button>
+
+</form>
+
+<div id="loginStatus" class="status-box"></div>
+
+<p id="msg" class="muted"></p>
+
+<hr style="margin:25px 0;border:0;border-top:1px solid #e8ece7">
+
+<h2>Create account</h2>
+
+<form id="register">
+
+<input
+id="regName"
+type="text"
+placeholder="Full name"
+autocomplete="name"
+required
+>
+
+<input
+id="regEmail"
+type="email"
+placeholder="Email"
+autocomplete="email"
+required
+>
+
+<input
+id="regPassword"
+type="password"
+placeholder="Password (8+ characters)"
+minlength="8"
+autocomplete="new-password"
+required
+>
+
+<button id="registerBtn" type="submit">
+Create account
+</button>
+
+</form>
+
+<div id="registerStatus" class="status-box"></div>
+
+<p id="regMsg" class="muted"></p>
+
+</div>
+
+<section id="app" style="display:none">
+
+<div class="grid">
+
+<div class="card">
+<div class="muted">Available</div>
+<div id="available" class="value">R0.00</div>
+</div>
+
+<div class="card">
+<div class="muted">Invested</div>
+<div id="invested" class="value">R0.00</div>
+</div>
+
+<div class="card">
+<div class="muted">Returns</div>
+<div id="returns" class="value">R0.00</div>
+</div>
+
+</div>
+
+<div class="tabs">
+
+<button class="active" onclick="tab('plans',this)">
+Invest
+</button>
+
+<button onclick="tab('portfolio',this)">
+Portfolio
+</button>
+
+<button onclick="tab('transactions',this)">
+Transactions
+</button>
+
+<button onclick="tab('profile',this)">
+Profile
+</button>
+
+</div>
+
+<div id="plans" class="panel active">
+
+<div class="card">
+<h2>Investment plans</h2>
+<div id="planList"></div>
+</div>
+
+</div>
+
+<div id="portfolio" class="panel">
+
+<div class="card">
+<h2>My investments</h2>
+<div id="portfolioList"></div>
+</div>
+
+</div>
+
+<div id="transactions" class="panel">
+
+<div class="card">
+<h2>Transaction history</h2>
+<div id="txList"></div>
+</div>
+
+</div>
+
+<div id="profile" class="panel">
+
+<div class="card">
+<h2>Profile</h2>
+<p id="profileText"></p>
+<p class="muted">
+KYC status is shown here.
+Production document storage/review must be connected before live onboarding.
+</p>
+</div>
+
+</div>
+
+</section>
+
+</main>
+
+<script>
+
+const $ = id => document.getElementById(id);
+
+const money = n =>
+new Intl.NumberFormat('en-ZA',{
+style:'currency',
+currency:'ZAR'
+}).format(Number(n || 0));
+
+const token = () =>
+localStorage.getItem('timb3rToken');
+
+const headers = () => ({
+Authorization:'Bearer ' + token()
 });
 
+
+function showStatus(elementId,message,type='info'){
+
+const el=$(elementId);
+
+el.className='status-box show status-'+type;
+
+el.textContent=message;
+
+}
+
+
+function clearStatus(elementId){
+
+const el=$(elementId);
+
+el.className='status-box';
+
+el.textContent='';
+
+}
+
+
+async function readResponse(response){
+
+const contentType=response.headers.get('content-type') || '';
+
+const text=await response.text();
+
+if(!text){
+return {};
+}
+
+if(contentType.includes('application/json')){
+
+try{
+return JSON.parse(text);
+}catch(error){
+
+return {
+error:'Server returned invalid JSON.',
+raw:text
+};
+
+}
+
+}
+
+return {
+error:text
+};
+
+}
+
+
+async function apiRequest(url,options={},statusElement){
+
+const controller=new AbortController();
+
+const timeout=setTimeout(
+()=>controller.abort(),
+20000
+);
+
+try{
+
+if(statusElement){
+
+showStatus(
+statusElement,
+'STEP 1/3 — Sending request to:\n'+
+url+
+'\n\nWaiting for Render server response...',
+'info'
+);
+
+}
+
+const response=await fetch(url,{
+...options,
+signal:controller.signal
+});
+
+
+if(statusElement){
+
+showStatus(
+statusElement,
+'STEP 2/3 — Server responded.\n\n'+
+'Endpoint: '+url+'\n'+
+'HTTP status: '+response.status+' '+response.statusText+
+'\n\nReading response...',
+response.ok?'success':'warning'
+);
+
+}
+
+
+const data=await readResponse(response);
+
+
+if(statusElement){
+
+if(response.ok){
+
+showStatus(
+statusElement,
+'STEP 3/3 — Request completed successfully.\n\n'+
+'Endpoint: '+url+'\n'+
+'HTTP status: '+response.status+
+'\n\nThe Render server was reached.',
+'success'
+);
+
+}else{
+
+showStatus(
+statusElement,
+'STEP 3/3 — Render server was reached, but returned an error.\n\n'+
+'Endpoint: '+url+'\n'+
+'HTTP status: '+response.status+'\n'+
+'Message: '+(data.error || 'Unknown server error')+
+'\n\nThis means the request IS reaching your server.',
+'error'
+);
+
+}
+
+}
+
+return {
+ok:response.ok,
+status:response.status,
+data
+};
+
+}catch(error){
+
+let message;
+
+if(error.name==='AbortError'){
+
+message=
+'REQUEST TIMEOUT\n\n'+
+'The browser sent the request, but the server did not respond within 20 seconds.\n\n'+
+'This can happen when the Render free service is waking up.';
+
+}else{
+
+message=
+'NETWORK / JAVASCRIPT ERROR\n\n'+
+'The request could not receive a response from the server.\n\n'+
+'Error: '+error.message+
+'\n\nIf Render shows NO new log, this indicates the request may not have reached the server.';
+
+}
+
+if(statusElement){
+
+showStatus(
+statusElement,
+message,
+'error'
+);
+
+}
+
+throw error;
+
+}finally{
+
+clearTimeout(timeout);
+
+}
+
+}
+
+
+$('login').addEventListener('submit',async e=>{
+
+e.preventDefault();
+
+const button=$('loginBtn');
+
+const email=$('email').value.trim();
+
+const password=$('password').value;
+
+clearStatus('loginStatus');
+
+$('msg').textContent='';
+
+button.disabled=true;
+
+button.textContent='Connecting...';
+
+try{
+
+const result=await apiRequest(
+'/api/auth/login',
+{
+method:'POST',
+headers:{
+'Content-Type':'application/json'
+},
+body:JSON.stringify({
+email:email,
+password:password
+})
+},
+'loginStatus'
+);
+
+const d=result.data;
+
+if(!result.ok){
+
+$('msg').textContent=
+d.error ||
+'Sign in failed.';
+
+$('msg').className='error-text';
+
+return;
+
+}
+
+if(!d.token){
+
+showStatus(
+'loginStatus',
+'The server responded successfully, but no authentication token was returned.\n\nCheck the /api/auth/login response in server.js.',
+'error'
+);
+
+$('msg').textContent=
+'Login response did not contain a token.';
+
+$('msg').className='error-text';
+
+return;
+
+}
+
+localStorage.setItem(
+'timb3rToken',
+d.token
+);
+
+$('msg').textContent=
+'Signed in successfully.';
+
+$('msg').className='success-text';
+
+await load();
+
+}catch(error){
+
+$('msg').textContent=
+'Sign in could not be completed. See the diagnostic message above.';
+
+$('msg').className='error-text';
+
+}finally{
+
+button.disabled=false;
+
+button.textContent='Sign in';
+
+}
+
+});
+
+
 $('register').addEventListener('submit',async e=>{
-  e.preventDefault();
 
-  const r=await fetch('/api/auth/register',{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({
-      name:$('regName').value,
-      email:$('regEmail').value,
-      password:$('regPassword').value
-    })
-  });
+e.preventDefault();
 
-  const d=await r.json();
+const button=$('registerBtn');
 
-  if(!r.ok){
-    $('regMsg').textContent=d.error||'Registration failed.';
-    return;
-  }
+const name=$('regName').value.trim();
 
-  $('regMsg').textContent='Account created! You can now sign in.';
-  $('reg').reset();
-});load();
-</script></body></html>
+const email=$('regEmail').value.trim();
+
+const password=$('regPassword').value;
+
+clearStatus('registerStatus');
+
+$('regMsg').textContent='';
+
+button.disabled=true;
+
+button.textContent='Creating account...';
+
+try{
+
+const result=await apiRequest(
+'/api/auth/register',
+{
+method:'POST',
+headers:{
+'Content-Type':'application/json'
+},
+body:JSON.stringify({
+name:name,
+email:email,
+password:password
+})
+},
+'registerStatus'
+);
+
+const d=result.data;
+
+if(!result.ok){
+
+$('regMsg').textContent=
+d.error ||
+'Registration failed.';
+
+$('regMsg').className='error-text';
+
+return;
+
+}
+
+$('regMsg').textContent=
+'Account created! You can now sign in.';
+
+$('regMsg').className='success-text';
+
+
+$('register').reset();
+
+
+showStatus(
+'registerStatus',
+'Account creation succeeded.\n\nYou can now use the Sign in form.',
+'success'
+);
+
+}catch(error){
+
+$('regMsg').textContent=
+'Account creation could not be completed. See the diagnostic message above.';
+
+$('regMsg').className='error-text';
+
+}finally{
+
+button.disabled=false;
+
+button.textContent='Create account';
+
+}
+
+});
+
+
+async function load(){
+
+if(!token()){
+return;
+}
+
+try{
+
+const h=headers();
+
+const results=await Promise.all([
+
+fetch('/api/me',{
+headers:h
+}),
+
+fetch('/api/dashboard',{
+headers:h
+}),
+
+fetch('/api/plans'),
+
+fetch('/api/investments',{
+headers:h
+}),
+
+fetch('/api/transactions',{
+headers:h
+})
+
+]);
+
+const [
+me,
+db,
+plans,
+inv,
+tx
+]=results;
+
+if(!me.ok){
+
+localStorage.removeItem('timb3rToken');
+
+showStatus(
+'loginStatus',
+'Your login token was rejected by the server.\n\nPlease sign in again.',
+'error'
+);
+
+return;
+
+}
+
+const u=await me.json();
+
+const b=await db.json();
+
+const ps=await plans.json();
+
+const is=await inv.json();
+
+const ts=await tx.json();
+
+$('app').style.display='block';
+
+$('available').textContent=
+money(b.available);
+
+$('invested').textContent=
+money(b.invested);
+
+$('returns').textContent=
+money(b.returns);
+
+$('profileText').textContent=
+`${u.name} · ${u.email} · KYC: ${u.kyc_status} · Referral: ${u.referral_code}`;
+
+$('planList').innerHTML=
+ps.map(p=>`
+
+<div class="card">
+
+<h3>${p.name}</h3>
+
+<p class="muted">
+${p.description || ''}
+</p>
+
+<p>
+${money(p.min_amount)}
+–
+${money(p.max_amount)}
+·
+${p.term_days} days
+</p>
+
+<input
+id="amt-${p.id}"
+type="number"
+min="${p.min_amount}"
+max="${p.max_amount}"
+placeholder="Amount (ZAR)"
+>
+
+<button onclick="invest('${p.id}')">
+Invest
+</button>
+
+</div>
+
+`).join('');
+
+$('portfolioList').innerHTML=
+is.length
+?
+is.map(i=>`
+
+<p>
+<b>${i.plan_name}</b>
+—
+${money(i.principal)}
+—
+${i.status}
+</p>
+
+`).join('')
+:
+'<p class="muted">No investments yet.</p>';
+
+$('txList').innerHTML=
+ts.length
+?
+`
+<table>
+
+<tr>
+<th>Reference</th>
+<th>Type</th>
+<th>Amount</th>
+<th>Status</th>
+</tr>
+
+${ts.map(t=>`
+
+<tr>
+<td>${t.reference}</td>
+<td>${t.type}</td>
+<td>${money(t.amount)}</td>
+<td>${t.status}</td>
+</tr>
+
+`).join('')}
+
+</table>
+`
+:
+'<p class="muted">No transactions yet.</p>';
+
+}catch(error){
+
+console.error(
+'Dashboard loading error:',
+error
+);
+
+showStatus(
+'loginStatus',
+'Login succeeded, but the dashboard could not be loaded.\n\nError: '+error.message,
+'error'
+);
+
+}
+
+}
+
+
+async function invest(planId){
+
+const amount=
+Number($('amt-'+planId).value);
+
+try{
+
+const result=await apiRequest(
+'/api/investments',
+{
+method:'POST',
+headers:{
+...headers(),
+'Content-Type':'application/json'
+},
+body:JSON.stringify({
+planId,
+amount
+})
+}
+);
+
+const d=result.data;
+
+if(result.ok){
+
+alert(
+'Investment created: '+
+(d.investmentId || '')
+);
+
+load();
+
+}else{
+
+alert(
+d.error ||
+'Investment failed.'
+);
+
+}
+
+}catch(error){
+
+alert(
+'Investment request failed:\n\n'+
+error.message
+);
+
+}
+
+}
+
+
+function tab(id,b){
+
+document
+.querySelectorAll('.panel')
+.forEach(x=>
+x.classList.remove('active')
+);
+
+$(id).classList.add('active');
+
+document
+.querySelectorAll('.tabs button')
+.forEach(x=>
+x.classList.remove('active')
+);
+
+b.classList.add('active');
+
+}
+
+
+load();
+
+</script>
+
+</body>
+</html>
