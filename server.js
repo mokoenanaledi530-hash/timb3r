@@ -38,8 +38,22 @@ app.post("/api/auth/register",async(req,res)=>{
   const r=await pool.query("INSERT INTO users(name,email,password_hash,referral_code) VALUES($1,$2,$3,$4) RETURNING id,name,email,role,kyc_status,referral_code",[name.trim(),email.trim().toLowerCase(),hash,code]);
   await audit(r.rows[0].id,"REGISTER","user",r.rows[0].id,{referralCode:referralCode||null});
   res.status(201).json({user:r.rows[0]});
- }catch(e){res.status(e.code==="23505"?409:500).json({error:e.code==="23505"?"Email already registered":"Registration failed"})}
-});
+ }catch(e){
+  console.error("REGISTRATION ERROR:", e);
+  console.error("REGISTRATION ERROR CODE:", e.code);
+  console.error("REGISTRATION ERROR MESSAGE:", e.message);
+  console.error("REGISTRATION ERROR DETAIL:", e.detail);
+  console.error("REGISTRATION ERROR HINT:", e.hint);
+
+  res.status(e.code==="23505"?409:500).json({
+    error:e.code==="23505"
+      ?"Email already registered"
+      :"Registration failed",
+    debug:process.env.NODE_ENV==="production"
+      ?undefined
+      :e.message
+  });
+ }
 
 app.post("/api/auth/login",async(req,res)=>{
  if(!pool)return res.status(503).json({error:"Database not configured"});
