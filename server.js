@@ -28,32 +28,72 @@ app.get("/api/health",async(req,res)=>{
  let database="not configured"; if(pool){try{await pool.query("SELECT 1");database="connected"}catch{database="error"}}
  res.json({app:"TIMB3R",version:"0.2.0",status:"ok",database,mode:process.env.APP_MODE||"demo"});
 });
+app.post("/api/auth/register", async (req, res) => {
+  if (!pool) {
+    return res.status(503).json({
+      error: "Database not configured"
+    });
+  }
 
-app.post("/api/auth/register",async(req,res)=>{
- if(!pool)return res.status(503).json({error:"Database not configured"});
- const {name,email,password,referralCode}=req.body;
- if(!name||!email||!password||password.length<8)return res.status(400).json({error:"Name, email and 8+ character password required"});
- try{
-  const hash=await bcrypt.hash(password,12), code=crypto.randomBytes(5).toString("hex").toUpperCase();
-  const r=await pool.query("INSERT INTO users(name,email,password_hash,referral_code) VALUES($1,$2,$3,$4) RETURNING id,name,email,role,kyc_status,referral_code",[name.trim(),email.trim().toLowerCase(),hash,code]);
-  await audit(r.rows[0].id,"REGISTER","user",r.rows[0].id,{referralCode:referralCode||null});
-  res.status(201).json({user:r.rows[0]});
- }catch(e){
-  console.error("REGISTRATION ERROR:", e);
-  console.error("REGISTRATION ERROR CODE:", e.code);
-  console.error("REGISTRATION ERROR MESSAGE:", e.message);
-  console.error("REGISTRATION ERROR DETAIL:", e.detail);
-  console.error("REGISTRATION ERROR HINT:", e.hint);
+  const { name, email, password, referralCode } = req.body;
 
-  res.status(e.code==="23505"?409:500).json({
-    error:e.code==="23505"
-      ?"Email already registered"
-      :"Registration failed",
-    debug:process.env.NODE_ENV==="production"
-      ?undefined
-      :e.message
-  });
- }
+  if (!name || !email || !password || password.length < 8) {
+    return res.status(400).json({
+      error: "Name, email and 8+ character password required"
+    });
+  }
+
+  try {
+    const hash = await bcrypt.hash(password, 12);
+
+    const code = crypto
+      .randomBytes(5)
+      .toString("hex")
+      .toUpperCase();
+
+    const r = await pool.query(
+      `INSERT INTO users
+        (name, email, password_hash, referral_code)
+       VALUES ($1, $2, $3, $4)
+       RETURNING id, name, email, role, kyc_status, referral_code`,
+      [
+        name.trim(),
+        email.trim().toLowerCase(),
+        hash,
+        code
+      ]
+    );
+
+    await audit(
+      r.rows[0].id,
+      "REGISTER",
+      "user",
+      r.rows[0].id,
+      {
+        referralCode: referralCode || null
+      }
+    );
+
+    return res.status(201).json({
+      user: r.rows[0]
+    });
+
+  } catch (e) {
+    console.error("REGISTRATION ERROR:", e);
+    console.error("REGISTRATION ERROR CODE:", e.code);
+    console.error("REGISTRATION ERROR MESSAGE:", e.message);
+    console.error("REGISTRATION ERROR DETAIL:", e.detail);
+    console.error("REGISTRATION ERROR HINT:", e.hint);
+
+    return res.status(e.code === "23505" ? 409 : 500).json({
+      error:
+        e.code === "23505"
+          ? "Email already registered"
+          : "Registration failed"
+    });
+  }
+});
+
 
 app.post("/api/auth/login",async(req,res)=>{
  if(!pool)return res.status(503).json({error:"Database not configured"});
