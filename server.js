@@ -12,6 +12,10 @@ const pool=process.env.DATABASE_URL?new Pool({connectionString:process.env.DATAB
 
 app.use(helmet({contentSecurityPolicy:false}));
 app.use(express.json({limit:"1mb"}));
+app.use((req,res,next)=>{
+  console.log("REQUEST:", req.method, req.originalUrl);
+  next();
+});
 app.use(express.static(path.join(__dirname,"public")));
 
 const ref=()=>`T3-${new Date().toISOString().slice(0,10).replaceAll("-","")}-${crypto.randomBytes(4).toString("hex").toUpperCase()}`;
@@ -201,7 +205,7 @@ app.get("/{*splat}", (req, res) => {
   );
 });
 
-app.listen(port, () => {
+app.listen(port, "0.0.0.0", () => {
   console.log(`TIMB3R 0.2.0 listening on ${port}`);
-});
+});l
 
