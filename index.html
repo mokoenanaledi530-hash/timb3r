@@ -15,6 +15,12 @@ main{max-width:1180px;margin:30px auto;padding:0 18px}.hero{padding:34px;border-
 <div class="card"><h2>Sign in</h2><form id="login"><input id="email" type="email" placeholder="Email" required><input id="password" type="password" placeholder="Password" required><button>Sign in</button></form><p id="msg" class="muted"></p></div>
 <section id="app" style="display:none">
 <div class="grid"><div class="card"><div class="muted">Available</div><div id="available" class="value">R0.00</div></div><div class="card"><div class="muted">Invested</div><div id="invested" class="value">R0.00</div></div><div class="card"><div class="muted">Returns</div><div id="returns" class="value">R0.00</div></div></div>
+<div class="card">
+  <h3>Demo Deposit</h3>
+  <p class="muted">Testing only — no real funds move.</p>
+  <button onclick="demoDeposit()">Add R1,000 Demo Deposit</button>
+  <p id="depositMsg" class="muted"></p>
+</div>
 <div class="tabs"><button class="active" onclick="tab('plans',this)">Invest</button><button onclick="tab('portfolio',this)">Portfolio</button><button onclick="tab('transactions',this)">Transactions</button><button onclick="tab('profile',this)">Profile</button></div>
 <div id="plans" class="panel active"><div class="card"><h2>Investment plans</h2><div id="planList"></div></div></div>
 <div id="portfolio" class="panel"><div class="card"><h2>My investments</h2><div id="portfolioList"></div></div></div>
