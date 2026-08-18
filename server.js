@@ -207,5 +207,5 @@ app.get("/{*splat}", (req, res) => {
 
 app.listen(port, "0.0.0.0", () => {
   console.log(`TIMB3R 0.2.0 listening on ${port}`);
-});l
+});
 
