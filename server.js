@@ -209,3 +209,317 @@ app.listen(port, "0.0.0.0", () => {
   console.log(`TIMB3R 0.2.0 listening on ${port}`);
 });
 
+// ===============================
+// TIMB3R BANK PAYMENT ROUTES
+// ===============================
+
+app.get("/api/payments/bank-details", auth, async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT id, name, email, referral_code
+       FROM users
+       WHERE id = $1`,
+      [req.user.id]
+    );
+
+    if (!result.rows.length) {
+      return res.status(404).json({
+        error: "User not found"
+      });
+    }
+
+    const user = result.rows[0];
+
+    // Use referral_code as the customer's payment reference.
+    // If your system uses another Profile ID field, replace this.
+    const profileId = user.referral_code || `T3-${user.id.slice(0, 8).toUpperCase()}`;
+
+    res.json({
+      bank: process.env.NEDBANK_NAME || "Nedbank",
+      accountName: process.env.NEDBANK_ACCOUNT_NAME || "Timber Investments",
+      accountNumber: process.env.NEDBANK_ACCOUNT_NUMBER || "",
+      branchCode: process.env.NEDBANK_BRANCH_CODE || "",
+      reference: profileId,
+      profileId
+    });
+
+  } catch (err) {
+    console.error("Bank details error:", err);
+
+    res.status(500).json({
+      error: "Unable to load payment details"
+    });
+  }
+});
+
+
+app.post("/api/payments/bank", auth, async (req, res) => {
+  try {
+    const {
+      amount,
+      senderName,
+      senderBank,
+      paymentDate,
+      proofUrl
+    } = req.body;
+
+    const numericAmount = Number(amount);
+
+    if (!Number.isFinite(numericAmount) || numericAmount <= 0) {
+      return res.status(400).json({
+        error: "Enter a valid payment amount"
+      });
+    }
+
+    const userResult = await pool.query(
+      `SELECT referral_code
+       FROM users
+       WHERE id = $1`,
+      [req.user.id]
+    );
+
+    if (!userResult.rows.length) {
+      return res.status(404).json({
+        error: "User not found"
+      });
+    }
+
+    const profileReference =
+      userResult.rows[0].referral_code ||
+      `T3-${req.user.id.slice(0, 8).toUpperCase()}`;
+
+    const result = await pool.query(
+      `INSERT INTO bank_payments
+       (
+         user_id,
+         profile_reference,
+         amount,
+         sender_name,
+         sender_bank,
+         payment_date,
+         proof_url
+       )
+       VALUES ($1,$2,$3,$4,$5,$6,$7)
+       RETURNING id, amount, profile_reference, status, created_at`,
+      [
+        req.user.id,
+        profileReference,
+        numericAmount,
+        senderName || null,
+        senderBank || null,
+        paymentDate || null,
+        proofUrl || null
+      ]
+    );
+
+    res.status(201).json({
+      success: true,
+      message: "Payment submitted for verification",
+      payment: result.rows[0]
+    });
+
+  } catch (err) {
+    console.error("Bank payment submission error:", err);
+
+    res.status(500).json({
+      error: "Unable to submit payment"
+    });
+  }
+});
+
+
+app.get("/api/admin/payments", auth, async (req, res) => {
+  try {
+    const adminResult = await pool.query(
+      `SELECT role
+       FROM users
+       WHERE id = $1`,
+      [req.user.id]
+    );
+
+    if (!adminResult.rows.length ||
+        !["admin", "compliance"].includes(adminResult.rows[0].role)) {
+      return res.status(403).json({
+        error: "Administrator access required"
+      });
+    }
+
+    const result = await pool.query(
+      `SELECT
+          bp.id,
+          bp.profile_reference,
+          bp.amount,
+          bp.sender_name,
+          bp.sender_bank,
+          bp.payment_date,
+          bp.proof_url,
+          bp.status,
+          bp.created_at,
+          bp.reviewed_at,
+          bp.admin_note,
+          u.name AS customer_name,
+          u.email AS customer_email
+       FROM bank_payments bp
+       JOIN users u ON u.id = bp.user_id
+       ORDER BY bp.created_at DESC`
+    );
+
+    res.json({
+      payments: result.rows
+    });
+
+  } catch (err) {
+    console.error("Admin payment list error:", err);
+
+    res.status(500).json({
+      error: "Unable to load payments"
+    });
+  }
+});
+
+
+app.post("/api/admin/payments/:id/approve", auth, async (req, res) => {
+  const client = await pool.connect();
+
+  try {
+    const adminResult = await client.query(
+      `SELECT role
+       FROM users
+       WHERE id = $1`,
+      [req.user.id]
+    );
+
+    if (!adminResult.rows.length ||
+        !["admin", "compliance"].includes(adminResult.rows[0].role)) {
+      return res.status(403).json({
+        error: "Administrator access required"
+      });
+    }
+
+    await client.query("BEGIN");
+
+    const paymentResult = await client.query(
+      `SELECT *
+       FROM bank_payments
+       WHERE id = $1
+       FOR UPDATE`,
+      [req.params.id]
+    );
+
+    if (!paymentResult.rows.length) {
+      await client.query("ROLLBACK");
+
+      return res.status(404).json({
+        error: "Payment not found"
+      });
+    }
+
+    const payment = paymentResult.rows[0];
+
+    if (payment.status !== "pending") {
+      await client.query("ROLLBACK");
+
+      return res.status(409).json({
+        error: `Payment is already ${payment.status}`
+      });
+    }
+
+    await client.query(
+      `UPDATE bank_payments
+       SET
+         status = 'approved',
+         reviewed_by = $1,
+         reviewed_at = now(),
+         admin_note = $2
+       WHERE id = $3`,
+      [
+        req.user.id,
+        req.body.note || "Payment manually verified",
+        req.params.id
+      ]
+    );
+
+    /*
+      IMPORTANT:
+      Do not automatically add money to a user's balance here
+      unless your investment/account-balance schema is already
+      designed for this.
+
+      Once your balance ledger is implemented, this transaction
+      should create ONE immutable credit entry.
+    */
+
+    await client.query("COMMIT");
+
+    res.json({
+      success: true,
+      message: "Payment approved"
+    });
+
+  } catch (err) {
+    await client.query("ROLLBACK");
+
+    console.error("Payment approval error:", err);
+
+    res.status(500).json({
+      error: "Unable to approve payment"
+    });
+
+  } finally {
+    client.release();
+  }
+});
+
+
+app.post("/api/admin/payments/:id/reject", auth, async (req, res) => {
+  try {
+    const adminResult = await pool.query(
+      `SELECT role
+       FROM users
+       WHERE id = $1`,
+      [req.user.id]
+    );
+
+    if (!adminResult.rows.length ||
+        !["admin", "compliance"].includes(adminResult.rows[0].role)) {
+      return res.status(403).json({
+        error: "Administrator access required"
+      });
+    }
+
+    const result = await pool.query(
+      `UPDATE bank_payments
+       SET
+         status = 'rejected',
+         reviewed_by = $1,
+         reviewed_at = now(),
+         admin_note = $2
+       WHERE id = $3
+         AND status = 'pending'
+       RETURNING id, status`,
+      [
+        req.user.id,
+        req.body.note || "Payment rejected",
+        req.params.id
+      ]
+    );
+
+    if (!result.rows.length) {
+      return res.status(404).json({
+        error: "Pending payment not found"
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "Payment rejected"
+    });
+
+  } catch (err) {
+    console.error("Payment rejection error:", err);
+
+    res.status(500).json({
+      error: "Unable to reject payment"
+    });
+  }
+});
