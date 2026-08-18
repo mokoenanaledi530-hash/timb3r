@@ -146,9 +146,9 @@ app.post("/api/deposits",auth,async(req,res)=>{
  if(!Number.isFinite(amount)||amount<=0)return res.status(400).json({error:"Invalid amount"});
  if((process.env.APP_MODE||"demo")!=="demo")return res.status(501).json({error:"Live payment webhook integration is required"});
  const reference=ref();
- await pool.query("INSERT INTO transactions(user_id,reference,type,amount,status,source) VALUES($1,$2,'deposit',$3,'pending','demo')",[req.user.id,reference,amount]);
+ await pool.query("INSERT INTO transactions(user_id,reference,type,amount,status,source) VALUES($1,$2,'deposit',$3,'completed','demo')",[req.user.id,reference,amount]);
  await audit(req.user.id,"CREATE_DEMO_DEPOSIT","transaction",null,{reference,amount});
- res.status(201).json({reference,status:"pending",message:"Demo only: no real funds moved."});
+ res.status(201).json({reference,status:"completed",message:"Demo only: no real funds moved."});
 });
 
 app.post("/api/investments",auth,async(req,res)=>{
