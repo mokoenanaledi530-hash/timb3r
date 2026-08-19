@@ -441,11 +441,7 @@
 <script>
 
 function token() {
-  return localStorage.getItem("token") ||
-         localStorage.getItem("authToken") ||
-         sessionStorage.getItem("token") ||
-         sessionStorage.getItem("authToken") ||
-         "";
+  return localStorage.getItem("timb3rToken") || "";
 }
 
 
