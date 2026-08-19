@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TIMB3R Admin — Payments</title>
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f5f7f8;
+      color: #17221c;
+    }
+
+    header {
+      background: #123c2a;
+      color: white;
+      padding: 18px 22px;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 22px;
+    }
+
+    header p {
+      margin: 5px 0 0;
+      opacity: .8;
+      font-size: 13px;
+    }
+
+    main {
+      max-width: 1100px;
+      margin: 25px auto;
+      padding: 0 16px;
+    }
+
+    .toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 18px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      border: 0;
+      border-radius: 8px;
+      padding: 10px 15px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .refresh {
+      background: #123c2a;
+      color: white;
+    }
+
+    .logout {
+      background: #e9ecef;
+      color: #333;
+    }
+
+    .status {
+      padding: 12px 14px;
+      border-radius: 8px;
+      background: white;
+      margin-bottom: 15px;
+      display: none;
+    }
+
+    .error {
+      background: #ffe7e7;
+      color: #8b1e1e;
+    }
+
+    .success {
+      background: #e4f6e9;
+      color: #176b32;
+    }
+
+    .payments {
+      display: grid;
+      gap: 15px;
+    }
+
+    .payment {
+      background: white;
+      border-radius: 12px;
+      padding: 18px;
+      box-shadow: 0 2px 10px rgba(0,0,0,.06);
+    }
+
+    .payment-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 15px;
+      flex-wrap: wrap;
+      margin-bottom: 15px;
+    }
+
+    .amount {
+      font-size: 22px;
+      font-weight: 700;
+    }
+
+    .pending {
+      color: #9a6500;
+      font-weight: 700;
+    }
+
+    .approved {
+      color: #16733a;
+      font-weight: 700;
+    }
+
+    .rejected {
+      color: #a52b2b;
+      font-weight: 700;
+    }
+
+    .details {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 10px;
+      font-size: 14px;
+    }
+
+    .detail {
+      background: #f7f8f8;
+      padding: 10px;
+      border-radius: 7px;
+    }
+
+    .label {
+      display: block;
+      color: #6b746f;
+      font-size: 12px;
+      margin-bottom: 3px;
+    }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .approve {
+      background: #19733d;
+      color: white;
+    }
+
+    .reject {
+      background: #b72b2b;
+      color: white;
+    }
+
+    button:disabled {
+      opacity: .5;
+      cursor: not-allowed;
+    }
+
+    .empty {
+      background: white;
+      padding: 35px;
+      text-align: center;
+      border-radius: 12px;
+      color: #68716c;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 30px;
+    }
+  </style>
+</head>
+
+<body>
+
+<header>
+  <h1>TIMB3R Admin</h1>
+  <p>Bank payment review</p>
+</header>
+
+<main>
+
+  <div class="toolbar">
+    <div>
+      <strong>Payment submissions</strong>
+    </div>
+
+    <div>
+      <button class="refresh" onclick="loadPayments()">Refresh</button>
+      <button class="logout" onclick="logout()">Log out</button>
+    </div>
+  </div>
+
+  <div id="status" class="status"></div>
+
+  <div id="payments" class="payments">
+    <div class="loading">Loading payments...</div>
+  </div>
+
+</main>
+
+<script>
+  const token =
+    localStorage.getItem("token") ||
+    localStorage.getItem("timb3r_token") ||
+    sessionStorage.getItem("token");
+
+  function showStatus(message, type = "") {
+    const el = document.getElementById("status");
+
+    el.textContent = message;
+    el.className = "status " + type;
+    el.style.display = "block";
+  }
+
+  function hideStatus() {
+    document.getElementById("status").style.display = "none";
+  }
+
+  function authHeaders() {
+    return {
+      "Content-Type": "application/json",
+      ...(token ? { "Authorization": "Bearer " + token } : {})
+    };
+  }
+
+  async function loadPayments() {
+    const container = document.getElementById("payments");
+
+    container.innerHTML =
+      '<div class="loading">Loading payments...</div>';
+
+    hideStatus();
+
+    try {
+      const response = await fetch("/api/admin/payments", {
+        method: "GET",
+        headers: authHeaders()
+      });
+
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(
+          data.error || `Unable to load payments (${response.status})`
+        );
+      }
+
+      renderPayments(data.payments || []);
+
+    } catch (err) {
+      console.error(err);
+
+      container.innerHTML = "";
+      showStatus(err.message, "error");
+    }
+  }
+
+  function renderPayments(payments) {
+    const container = document.getElementById("payments");
+
+    if (!payments.length) {
+      container.innerHTML =
+        '<div class="empty">No bank payments found.</div>';
+      return;
+    }
+
+    container.innerHTML = payments.map(payment => {
+      const status = String(payment.status || "").toLowerCase();
+
+      const amount = Number(payment.amount || 0)
+        .toLocaleString("en-ZA", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        });
+
+      const date = payment.payment_date
+        ? new Date(payment.payment_date).toLocaleString()
+        : "Not supplied";
+
+      const created = payment.created_at
+        ? new Date(payment.created_at).toLocaleString()
+        : "Unknown";
+
+      const pending = status === "pending";
+
+      return `
+        <div class="payment">
+
+          <div class="payment-header">
+            <div>
+              <div class="amount">
+                R ${escapeHtml(amount)}
+              </div>
+
+              <div class="${escapeHtml(status)}">
+                ${escapeHtml(status.toUpperCase())}
+              </div>
+            </div>
+          </div>
+
+          <div class="details">
+
+            <div class="detail">
+              <span class="label">Profile reference</span>
+              ${escapeHtml(payment.profile_reference || "—")}
+            </div>
+
+            <div class="detail">
+              <span class="label">Sender</span>
+              ${escapeHtml(payment.sender_name || "—")}
+            </div>
+
+            <div class="detail">
+              <span class="label">Sender bank</span>
+              ${escapeHtml(payment.sender_bank || "—")}
+            </div>
+
+            <div class="detail">
+              <span class="label">Payment date</span>
+              ${escapeHtml(date)}
+            </div>
+
+            <div class="detail">
+              <span class="label">Submitted</span>
+              ${escapeHtml(created)}
+            </div>
+
+            <div class="detail">
+              <span class="label">Payment ID</span>
+              ${escapeHtml(payment.id || "—")}
+            </div>
+
+          </div>
+
+          ${
+            pending
+              ? `
+                <div class="actions">
+                  <button
+                    class="approve"
+                    onclick="approvePayment('${escapeJs(payment.id)}')">
+                    Approve
+                  </button>
+
+                  <button
+                    class="reject"
+                    onclick="rejectPayment('${escapeJs(payment.id)}')">
+                    Reject
+                  </button>
+                </div>
+              `
+              : ""
+          }
+
+        </div>
+      `;
+    }).join("");
+  }
+
+  async function approvePayment(id) {
+    const note = prompt(
+      "Optional admin note:",
+      "Payment manually verified"
+    );
+
+    if (note === null) return;
+
+    await changePaymentStatus(
+      `/api/admin/payments/${encodeURIComponent(id)}/approve`,
+      note,
+      "Payment approved"
+    );
+  }
+
+  async function rejectPayment(id) {
+    const note = prompt(
+      "Reason for rejection:",
+      "Payment rejected"
+    );
+
+    if (note === null) return;
+
+    await changePaymentStatus(
+      `/api/admin/payments/${encodeURIComponent(id)}/reject`,
+      note,
+      "Payment rejected"
+    );
+  }
+
+  async function changePaymentStatus(url, note, successMessage) {
+    hideStatus();
+
+    try {
+      const response = await fetch(url, {
+        method: "POST",
+        headers: authHeaders(),
+        body: JSON.stringify({ note })
+      });
+
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(
+          data.error || `Request failed (${response.status})`
+        );
+      }
+
+      showStatus(
+        data.message || successMessage,
+        "success"
+      );
+
+      await loadPayments();
+
+    } catch (err) {
+      console.error(err);
+      showStatus(err.message, "error");
+    }
+  }
+
+  function logout() {
+    localStorage.removeItem("token");
+    localStorage.removeItem("timb3r_token");
+    sessionStorage.removeItem("token");
+
+    window.location.href = "/";
+  }
+
+  function escapeHtml(value) {
+    return String(value ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
+  function escapeJs(value) {
+    return String(value ?? "")
+      .replace(/\\/g, "\\\\")
+      .replace(/'/g, "\\'");
+  }
+
+  if (!token) {
+    showStatus(
+      "You are not signed in. Log in with your admin account first.",
+      "error"
+    );
+  } else {
+    loadPayments();
+  }
+</script>
+
+</body>
+</html>
