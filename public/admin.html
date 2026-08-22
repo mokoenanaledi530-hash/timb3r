@@ -3,175 +3,177 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TIMB3R Admin</title>
-
+  <title>TIMB3R Admin — Payments</title>
   <style>
+    * { box-sizing: border-box; }
+
     body {
       margin: 0;
       font-family: Arial, sans-serif;
-      background: #f4f6f8;
-      color: #17202a;
+      background: #f5f7f8;
+      color: #17221c;
     }
 
     header {
-      background: #111827;
+      background: #123c2a;
       color: white;
-      padding: 18px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+      padding: 18px 22px;
     }
 
-    .brand {
+    header h1 {
+      margin: 0;
       font-size: 22px;
-      font-weight: bold;
     }
 
-    button {
-      cursor: pointer;
-      border: 0;
-      border-radius: 7px;
-      padding: 10px 14px;
-      font-weight: bold;
-    }
-
-    .logout {
-      background: #ef4444;
-      color: white;
-    }
-
-    .layout {
-      display: flex;
-      min-height: calc(100vh - 65px);
-    }
-
-    aside {
-      width: 220px;
-      background: #1f2937;
-      padding: 15px;
-    }
-
-    .nav {
-      width: 100%;
-      margin-bottom: 8px;
-      background: transparent;
-      color: white;
-      text-align: left;
-    }
-
-    .nav:hover,
-    .nav.active {
-      background: #374151;
+    header p {
+      margin: 5px 0 0;
+      opacity: .8;
+      font-size: 13px;
     }
 
     main {
-      flex: 1;
-      padding: 25px;
-      overflow-x: auto;
+      max-width: 1100px;
+      margin: 25px auto;
+      padding: 0 16px;
     }
 
-    .section {
-      display: none;
+    .toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 18px;
+      flex-wrap: wrap;
     }
 
-    .section.active {
-      display: block;
-    }
-
-    .cards {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 15px;
-    }
-
-    .card {
-      background: white;
-      padding: 20px;
-      border-radius: 10px;
-      box-shadow: 0 2px 8px rgba(0,0,0,.08);
-    }
-
-    .label {
-      color: #6b7280;
-      font-size: 13px;
-    }
-
-    .number {
-      font-size: 28px;
-      font-weight: bold;
-      margin-top: 8px;
-    }
-
-    .panel {
-      background: white;
-      padding: 20px;
-      border-radius: 10px;
-      margin-top: 20px;
-      box-shadow: 0 2px 8px rgba(0,0,0,.08);
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-    }
-
-    th,
-    td {
-      padding: 12px 8px;
-      border-bottom: 1px solid #ddd;
-      text-align: left;
-      font-size: 13px;
-    }
-
-    th {
-      background: #f9fafb;
-    }
-
-    .approve {
-      background: #16a34a;
-      color: white;
-      margin-right: 5px;
-    }
-
-    .reject {
-      background: #dc2626;
-      color: white;
+    button {
+      border: 0;
+      border-radius: 8px;
+      padding: 10px 15px;
+      cursor: pointer;
+      font-weight: 600;
     }
 
     .refresh {
-      background: #111827;
+      background: #123c2a;
       color: white;
-      margin-bottom: 15px;
+    }
+
+    .logout {
+      background: #e9ecef;
+      color: #333;
     }
 
     .status {
-      font-weight: bold;
+      padding: 12px 14px;
+      border-radius: 8px;
+      background: white;
+      margin-bottom: 15px;
+      display: none;
+    }
+
+    .error {
+      background: #ffe7e7;
+      color: #8b1e1e;
+    }
+
+    .success {
+      background: #e4f6e9;
+      color: #176b32;
+    }
+
+    .payments {
+      display: grid;
+      gap: 15px;
+    }
+
+    .payment {
+      background: white;
+      border-radius: 12px;
+      padding: 18px;
+      box-shadow: 0 2px 10px rgba(0,0,0,.06);
+    }
+
+    .payment-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 15px;
+      flex-wrap: wrap;
+      margin-bottom: 15px;
+    }
+
+    .amount {
+      font-size: 22px;
+      font-weight: 700;
     }
 
     .pending {
-      color: #b45309;
+      color: #9a6500;
+      font-weight: 700;
     }
 
     .approved {
-      color: #15803d;
+      color: #16733a;
+      font-weight: 700;
     }
 
     .rejected {
-      color: #dc2626;
+      color: #a52b2b;
+      font-weight: 700;
     }
 
-    @media(max-width:800px) {
-      .layout {
-        display: block;
-      }
+    .details {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 10px;
+      font-size: 14px;
+    }
 
-      aside {
-        width: auto;
-      }
+    .detail {
+      background: #f7f8f8;
+      padding: 10px;
+      border-radius: 7px;
+    }
 
-      .cards {
-        grid-template-columns: 1fr 1fr;
-      }
+    .label {
+      display: block;
+      color: #6b746f;
+      font-size: 12px;
+      margin-bottom: 3px;
+    }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .approve {
+      background: #19733d;
+      color: white;
+    }
+
+    .reject {
+      background: #b72b2b;
+      color: white;
+    }
+
+    button:disabled {
+      opacity: .5;
+      cursor: not-allowed;
+    }
+
+    .empty {
+      background: white;
+      padding: 35px;
+      text-align: center;
+      border-radius: 12px;
+      color: #68716c;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 30px;
     }
   </style>
 </head>
@@ -179,651 +181,282 @@
 <body>
 
 <header>
-  <div>
-    <div class="brand">TIMB3R</div>
-    <div>Admin Panel</div>
-  </div>
-
-  <button class="logout" onclick="logout()">Logout</button>
+  <h1>TIMB3R Admin</h1>
+  <p>Bank payment review</p>
 </header>
 
-<div class="layout">
+<main>
 
-  <aside>
+  <div class="toolbar">
+    <div>
+      <strong>Payment submissions</strong>
+    </div>
 
-    <button class="nav active" onclick="show('dashboard')">
-      Dashboard
-    </button>
+    <div>
+      <button class="refresh" onclick="loadPayments()">Refresh</button>
+      <button class="logout" onclick="logout()">Log out</button>
+    </div>
+  </div>
 
-    <button class="nav" onclick="show('payments')">
-      Payment Review
-    </button>
+  <div id="status" class="status"></div>
 
-    <button class="nav" onclick="show('users')">
-      Users / Investors
-    </button>
+  <div id="payments" class="payments">
+    <div class="loading">Loading payments...</div>
+  </div>
 
-    <button class="nav" onclick="show('transactions')">
-      Transactions
-    </button>
-
-    <button class="nav" onclick="show('audit')">
-      Audit Log
-    </button>
-
-  </aside>
-
-  <main>
-
-    <!-- DASHBOARD -->
-
-    <section id="dashboard" class="section active">
-
-      <h1>Admin Dashboard</h1>
-
-      <div class="cards">
-
-        <div class="card">
-          <div class="label">Users</div>
-          <div class="number" id="usersCount">—</div>
-        </div>
-
-        <div class="card">
-          <div class="label">Payments</div>
-          <div class="number" id="paymentsCount">—</div>
-        </div>
-
-        <div class="card">
-          <div class="label">Pending</div>
-          <div class="number" id="pendingCount">—</div>
-        </div>
-
-        <div class="card">
-          <div class="label">Transactions</div>
-          <div class="number" id="transactionsCount">—</div>
-        </div>
-
-      </div>
-
-      <div class="panel">
-
-        <h2>Administrator</h2>
-
-        <div id="adminInfo">
-          Checking login...
-        </div>
-
-      </div>
-
-    </section>
-
-
-    <!-- PAYMENT REVIEW -->
-
-    <section id="payments" class="section">
-
-      <h1>Payment Review</h1>
-
-      <button class="refresh" onclick="loadPayments()">
-        Refresh
-      </button>
-
-      <div class="panel">
-
-        <table>
-
-          <thead>
-
-            <tr>
-              <th>Customer</th>
-              <th>Reference</th>
-              <th>Amount</th>
-              <th>Sender</th>
-              <th>Bank</th>
-              <th>Date</th>
-              <th>Status</th>
-              <th>Action</th>
-            </tr>
-
-          </thead>
-
-          <tbody id="paymentsTable">
-
-            <tr>
-              <td colspan="8">
-                Loading...
-              </td>
-            </tr>
-
-          </tbody>
-
-        </table>
-
-      </div>
-
-    </section>
-
-
-    <!-- USERS -->
-
-    <section id="users" class="section">
-
-      <h1>Users / Investors</h1>
-
-      <button class="refresh" onclick="loadUsers()">
-        Refresh
-      </button>
-
-      <div class="panel">
-
-        <table>
-
-          <thead>
-
-            <tr>
-              <th>Name</th>
-              <th>Email</th>
-              <th>Role</th>
-              <th>KYC</th>
-              <th>Referral</th>
-            </tr>
-
-          </thead>
-
-          <tbody id="usersTable">
-
-            <tr>
-              <td colspan="5">
-                Loading...
-              </td>
-            </tr>
-
-          </tbody>
-
-        </table>
-
-      </div>
-
-    </section>
-
-
-    <!-- TRANSACTIONS -->
-
-    <section id="transactions" class="section">
-
-      <h1>Transactions</h1>
-
-      <button class="refresh" onclick="loadTransactions()">
-        Refresh
-      </button>
-
-      <div class="panel">
-
-        <table>
-
-          <thead>
-
-            <tr>
-              <th>Date</th>
-              <th>Reference</th>
-              <th>Email</th>
-              <th>Type</th>
-              <th>Amount</th>
-              <th>Status</th>
-            </tr>
-
-          </thead>
-
-          <tbody id="transactionsTable">
-
-            <tr>
-              <td colspan="6">
-                Loading...
-              </td>
-            </tr>
-
-          </tbody>
-
-        </table>
-
-      </div>
-
-    </section>
-
-
-    <!-- AUDIT -->
-
-    <section id="audit" class="section">
-
-      <h1>Audit Log</h1>
-
-      <button class="refresh" onclick="loadAudit()">
-        Refresh
-      </button>
-
-      <div class="panel">
-
-        <table>
-
-          <thead>
-
-            <tr>
-              <th>Date</th>
-              <th>Action</th>
-              <th>Entity</th>
-              <th>ID</th>
-              <th>Metadata</th>
-            </tr>
-
-          </thead>
-
-          <tbody id="auditTable">
-
-            <tr>
-              <td colspan="5">
-                Loading...
-              </td>
-            </tr>
-
-          </tbody>
-
-        </table>
-
-      </div>
-
-    </section>
-
-  </main>
-
-</div>
-
+</main>
 
 <script>
+  const token =
+    localStorage.getItem("token") ||
+    localStorage.getItem("timb3r_token") ||
+    sessionStorage.getItem("token");
 
-function token() {
-  return localStorage.getItem("timb3rToken") || "";
-}
+  function showStatus(message, type = "") {
+    const el = document.getElementById("status");
 
-
-async function api(url, function token() {
-  return localStorage.getItem("timb3rToken") || "";
-}
-
-
-function show(name) {
-
-  document.querySelectorAll(".section")
-    .forEach(x => x.classList.remove("active"));
-
-  document.getElementById(name)
-    .classList.add("active");
-
-  if (name === "payments") loadPayments();
-  if (name === "users") loadUsers();
-  if (name === "transactions") loadTransactions();
-  if (name === "audit") loadAudit();
-}
-
-
-async function loadAdmin() {
-
-  try {
-
-    const user = await api("/api/me");
-
-    document.getElementById("adminInfo").innerHTML =
-      "<b>" + user.name + "</b><br>" +
-      user.email + "<br>" +
-      "Role: <b>" + user.role + "</b>";
-
-  } catch (e) {
-
-    document.getElementById("adminInfo").textContent =
-      e.message;
-
+    el.textContent = message;
+    el.className = "status " + type;
+    el.style.display = "block";
   }
-}
 
+  function hideStatus() {
+    document.getElementById("status").style.display = "none";
+  }
 
-async function loadPayments() {
+  function authHeaders() {
+    return {
+      "Content-Type": "application/json",
+      ...(token ? { "Authorization": "Bearer " + token } : {})
+    };
+  }
 
-  try {
+  async function loadPayments() {
+    const container = document.getElementById("payments");
 
-    const data = await api("/api/admin/payments");
+    container.innerHTML =
+      '<div class="loading">Loading payments...</div>';
 
-    const payments = data.payments || [];
+    hideStatus();
 
-    document.getElementById("paymentsCount")
-      .textContent = payments.length;
+    try {
+      const response = await fetch("/api/admin/payments", {
+        method: "GET",
+        headers: authHeaders()
+      });
 
-    document.getElementById("pendingCount")
-      .textContent =
-      payments.filter(x => x.status === "pending").length;
+      const data = await response.json().catch(() => ({}));
 
-    const table =
-      document.getElementById("paymentsTable");
+      if (!response.ok) {
+        throw new Error(
+          data.error || `Unable to load payments (${response.status})`
+        );
+      }
+
+      renderPayments(data.payments || []);
+
+    } catch (err) {
+      console.error(err);
+
+      container.innerHTML = "";
+      showStatus(err.message, "error");
+    }
+  }
+
+  function renderPayments(payments) {
+    const container = document.getElementById("payments");
 
     if (!payments.length) {
-
-      table.innerHTML =
-        '<tr><td colspan="8">No payments found.</td></tr>';
-
+      container.innerHTML =
+        '<div class="empty">No bank payments found.</div>';
       return;
     }
 
-    table.innerHTML = payments.map(p => `
+    container.innerHTML = payments.map(payment => {
+      const status = String(payment.status || "").toLowerCase();
 
-      <tr>
+      const amount = Number(payment.amount || 0)
+        .toLocaleString("en-ZA", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        });
 
-        <td>
-          ${p.customer_name || "—"}<br>
-          <small>${p.customer_email || ""}</small>
-        </td>
+      const date = payment.payment_date
+        ? new Date(payment.payment_date).toLocaleString()
+        : "Not supplied";
 
-        <td>
-          ${p.profile_reference || "—"}
-        </td>
+      const created = payment.created_at
+        ? new Date(payment.created_at).toLocaleString()
+        : "Unknown";
 
-        <td>
-          R ${Number(p.amount || 0).toLocaleString("en-ZA", {
-            minimumFractionDigits: 2
-          })}
-        </td>
+      const pending = status === "pending";
 
-        <td>
-          ${p.sender_name || "—"}
-        </td>
+      return `
+        <div class="payment">
 
-        <td>
-          ${p.sender_bank || "—"}
-        </td>
+          <div class="payment-header">
+            <div>
+              <div class="amount">
+                R ${escapeHtml(amount)}
+              </div>
 
-        <td>
-          ${p.created_at
-            ? new Date(p.created_at).toLocaleString()
-            : "—"}
-        </td>
+              <div class="${escapeHtml(status)}">
+                ${escapeHtml(status.toUpperCase())}
+              </div>
+            </div>
+          </div>
 
-        <td class="status ${p.status}">
-          ${p.status}
-        </td>
+          <div class="details">
 
-        <td>
+            <div class="detail">
+              <span class="label">Profile reference</span>
+              ${escapeHtml(payment.profile_reference || "—")}
+            </div>
+
+            <div class="detail">
+              <span class="label">Sender</span>
+              ${escapeHtml(payment.sender_name || "—")}
+            </div>
+
+            <div class="detail">
+              <span class="label">Sender bank</span>
+              ${escapeHtml(payment.sender_bank || "—")}
+            </div>
+
+            <div class="detail">
+              <span class="label">Payment date</span>
+              ${escapeHtml(date)}
+            </div>
+
+            <div class="detail">
+              <span class="label">Submitted</span>
+              ${escapeHtml(created)}
+            </div>
+
+            <div class="detail">
+              <span class="label">Payment ID</span>
+              ${escapeHtml(payment.id || "—")}
+            </div>
+
+          </div>
 
           ${
-            p.status === "pending"
-            ? `
-              <button
-                class="approve"
-                onclick="approve('${p.id}')">
-                Approve
-              </button>
+            pending
+              ? `
+                <div class="actions">
+                  <button
+                    class="approve"
+                    onclick="approvePayment('${escapeJs(payment.id)}')">
+                    Approve
+                  </button>
 
-              <button
-                class="reject"
-                onclick="reject('${p.id}')">
-                Reject
-              </button>
-            `
-            : "—"
+                  <button
+                    class="reject"
+                    onclick="rejectPayment('${escapeJs(payment.id)}')">
+                    Reject
+                  </button>
+                </div>
+              `
+              : ""
           }
 
-        </td>
-
-      </tr>
-
-    `).join("");
-
-  } catch (e) {
-
-    document.getElementById("paymentsTable").innerHTML =
-      `<tr><td colspan="8">${e.message}</td></tr>`;
-
+        </div>
+      `;
+    }).join("");
   }
-}
 
-
-async function approve(id) {
-
-  const note = prompt(
-    "Admin note:",
-    "Payment manually verified"
-  );
-
-  if (note === null) return;
-
-  try {
-
-    await api(
-      "/api/admin/payments/" +
-      encodeURIComponent(id) +
-      "/approve",
-      {
-        method: "POST",
-        body: JSON.stringify({note})
-      }
+  async function approvePayment(id) {
+    const note = prompt(
+      "Optional admin note:",
+      "Payment manually verified"
     );
 
-    alert("Payment approved.");
+    if (note === null) return;
 
-    loadPayments();
-
-  } catch (e) {
-
-    alert(e.message);
-
+    await changePaymentStatus(
+      `/api/admin/payments/${encodeURIComponent(id)}/approve`,
+      note,
+      "Payment approved"
+    );
   }
-}
 
-
-async function reject(id) {
-
-  const note = prompt(
-    "Reason for rejection:",
-    "Payment could not be verified"
-  );
-
-  if (note === null) return;
-
-  try {
-
-    await api(
-      "/api/admin/payments/" +
-      encodeURIComponent(id) +
-      "/reject",
-      {
-        method: "POST",
-        body: JSON.stringify({note})
-      }
+  async function rejectPayment(id) {
+    const note = prompt(
+      "Reason for rejection:",
+      "Payment rejected"
     );
 
-    alert("Payment rejected.");
+    if (note === null) return;
 
+    await changePaymentStatus(
+      `/api/admin/payments/${encodeURIComponent(id)}/reject`,
+      note,
+      "Payment rejected"
+    );
+  }
+
+  async function changePaymentStatus(url, note, successMessage) {
+    hideStatus();
+
+    try {
+      const response = await fetch(url, {
+        method: "POST",
+        headers: authHeaders(),
+        body: JSON.stringify({ note })
+      });
+
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(
+          data.error || `Request failed (${response.status})`
+        );
+      }
+
+      showStatus(
+        data.message || successMessage,
+        "success"
+      );
+
+      await loadPayments();
+
+    } catch (err) {
+      console.error(err);
+      showStatus(err.message, "error");
+    }
+  }
+
+  function logout() {
+    localStorage.removeItem("token");
+    localStorage.removeItem("timb3r_token");
+    sessionStorage.removeItem("token");
+
+    window.location.href = "/";
+  }
+
+  function escapeHtml(value) {
+    return String(value ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
+  function escapeJs(value) {
+    return String(value ?? "")
+      .replace(/\\/g, "\\\\")
+      .replace(/'/g, "\\'");
+  }
+
+  if (!token) {
+    showStatus(
+      "You are not signed in. Log in with your admin account first.",
+      "error"
+    );
+  } else {
     loadPayments();
-
-  } catch (e) {
-
-    alert(e.message);
-
   }
-}
-
-
-async function loadUsers() {
-
-  try {
-
-    const users =
-      await api("/api/admin/users");
-
-    document.getElementById("usersCount")
-      .textContent = users.length;
-
-    const table =
-      document.getElementById("usersTable");
-
-    if (!users.length) {
-
-      table.innerHTML =
-        '<tr><td colspan="5">No users found.</td></tr>';
-
-      return;
-    }
-
-    table.innerHTML = users.map(u => `
-
-      <tr>
-
-        <td>${u.name || "—"}</td>
-
-        <td>${u.email || "—"}</td>
-
-        <td>${u.role || "—"}</td>
-
-        <td>${u.kyc_status || "—"}</td>
-
-        <td>${u.referral_code || "—"}</td>
-
-      </tr>
-
-    `).join("");
-
-  } catch (e) {
-
-    document.getElementById("usersTable").innerHTML =
-      `<tr><td colspan="5">${e.message}</td></tr>`;
-
-  }
-}
-
-
-async function loadTransactions() {
-
-  try {
-
-    const rows =
-      await api("/api/admin/transactions");
-
-    document.getElementById("transactionsCount")
-      .textContent = rows.length;
-
-    const table =
-      document.getElementById("transactionsTable");
-
-    if (!rows.length) {
-
-      table.innerHTML =
-        '<tr><td colspan="6">No transactions found.</td></tr>';
-
-      return;
-    }
-
-    table.innerHTML = rows.map(t => `
-
-      <tr>
-
-        <td>
-          ${t.created_at
-            ? new Date(t.created_at).toLocaleString()
-            : "—"}
-        </td>
-
-        <td>${t.reference || "—"}</td>
-
-        <td>${t.email || "—"}</td>
-
-        <td>${t.type || "—"}</td>
-
-        <td>
-          R ${Number(t.amount || 0).toLocaleString("en-ZA", {
-            minimumFractionDigits: 2
-          })}
-        </td>
-
-        <td>${t.status || "—"}</td>
-
-      </tr>
-
-    `).join("");
-
-  } catch (e) {
-
-    document.getElementById("transactionsTable").innerHTML =
-      `<tr><td colspan="6">${e.message}</td></tr>`;
-
-  }
-}
-
-
-async function loadAudit() {
-
-  try {
-
-    const rows =
-      await api("/api/admin/audit");
-
-    const table =
-      document.getElementById("auditTable");
-
-    if (!rows.length) {
-
-      table.innerHTML =
-        '<tr><td colspan="5">No audit records found.</td></tr>';
-
-      return;
-    }
-
-    table.innerHTML = rows.map(a => `
-
-      <tr>
-
-        <td>
-          ${a.created_at
-            ? new Date(a.created_at).toLocaleString()
-            : "—"}
-        </td>
-
-        <td>${a.action || "—"}</td>
-
-        <td>${a.entity_type || "—"}</td>
-
-        <td>${a.entity_id || "—"}</td>
-
-        <td>
-          ${JSON.stringify(a.metadata || {})}
-        </td>
-
-      </tr>
-
-    `).join("");
-
-  } catch (e) {
-
-    document.getElementById("auditTable").innerHTML =
-      `<tr><td colspan="5">${e.message}</td></tr>`;
-
-  }
-}
-
-
-function logout() {
-
-  localStorage.removeItem("token");
-  localStorage.removeItem("authToken");
-
-  sessionStorage.removeItem("token");
-  sessionStorage.removeItem("authToken");
-
-  location.href = "/";
-
-}
-
-
-loadAdmin();
-loadPayments();
-loadUsers();
-loadTransactions();
-
 </script>
 
 </body>
