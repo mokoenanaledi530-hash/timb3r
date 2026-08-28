@@ -71,3 +71,49 @@ WHERE NOT EXISTS(SELECT 1 FROM investment_plans WHERE name='Growth Grove');
 INSERT INTO investment_plans(name,description,min_amount,max_amount,term_days,status)
 SELECT 'Forest Partner','Large portfolio allocation.',250000,10000000,1095,'active'
 WHERE NOT EXISTS(SELECT 1 FROM investment_plans WHERE name='Forest Partner');
+
+CREATE TABLE IF NOT EXISTS bank_payments (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES users(id),
+  profile_reference TEXT NOT NULL,
+  amount NUMERIC(14,2) NOT NULL CHECK (amount > 0),
+  sender_name TEXT,
+  sender_bank TEXT,
+  payment_date TIMESTAMPTZ,
+  proof_url TEXT,
+  status TEXT NOT NULL DEFAULT 'pending'
+    CHECK (status IN ('pending','approved','rejected')),
+  reviewed_by UUID REFERENCES users(id),
+  reviewed_at TIMESTAMPTZ,
+  admin_note TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS bank_payments_created
+  ON bank_payments(created_at DESC);
+
+CREATE INDEX IF NOT EXISTS bank_payments_status
+  ON bank_payments(status);
+
+CREATE TABLE IF NOT EXISTS bank_payments (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES users(id),
+  profile_reference TEXT NOT NULL,
+  amount NUMERIC(14,2) NOT NULL CHECK (amount > 0),
+  sender_name TEXT,
+  sender_bank TEXT,
+  payment_date TIMESTAMPTZ,
+  proof_url TEXT,
+  status TEXT NOT NULL DEFAULT 'pending'
+    CHECK (status IN ('pending','approved','rejected')),
+  reviewed_by UUID REFERENCES users(id),
+  reviewed_at TIMESTAMPTZ,
+  admin_note TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS bank_payments_created
+  ON bank_payments(created_at DESC);
+
+CREATE INDEX IF NOT EXISTS bank_payments_status
+  ON bank_payments(status);

@@ -1,462 +1,1039 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TIMB3R Admin — Payments</title>
-  <style>
-    * { box-sizing: border-box; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TIMB3R Admin — Payments</title>
 
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: #f5f7f8;
-      color: #17221c;
-    }
+<style>
+*{box-sizing:border-box}
 
-    header {
-      background: #123c2a;
-      color: white;
-      padding: 18px 22px;
-    }
+body{
+  margin:0;
+  font-family:Arial,system-ui,sans-serif;
+  background:#f4f7f5;
+  color:#17221c;
+}
 
-    header h1 {
-      margin: 0;
-      font-size: 22px;
-    }
+header{
+  background:#123c2a;
+  color:#fff;
+  padding:20px;
+}
 
-    header p {
-      margin: 5px 0 0;
-      opacity: .8;
-      font-size: 13px;
-    }
+header h1{
+  margin:0;
+  font-size:24px;
+}
 
-    main {
-      max-width: 1100px;
-      margin: 25px auto;
-      padding: 0 16px;
-    }
+header p{
+  margin:6px 0 0;
+  opacity:.85;
+}
 
-    .toolbar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 18px;
-      flex-wrap: wrap;
-    }
+main{
+  width:min(1100px,100%);
+  margin:25px auto;
+  padding:0 16px;
+}
 
-    button {
-      border: 0;
-      border-radius: 8px;
-      padding: 10px 15px;
-      cursor: pointer;
-      font-weight: 600;
-    }
+.toolbar{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+  flex-wrap:wrap;
+  margin-bottom:18px;
+}
 
-    .refresh {
-      background: #123c2a;
-      color: white;
-    }
+button{
+  border:0;
+  border-radius:8px;
+  padding:11px 16px;
+  font-weight:700;
+  cursor:pointer;
+}
 
-    .logout {
-      background: #e9ecef;
-      color: #333;
-    }
+button:disabled{
+  opacity:.6;
+  cursor:not-allowed;
+}
 
-    .status {
-      padding: 12px 14px;
-      border-radius: 8px;
-      background: white;
-      margin-bottom: 15px;
-      display: none;
-    }
+.refresh{
+  background:#123c2a;
+  color:#fff;
+}
 
-    .error {
-      background: #ffe7e7;
-      color: #8b1e1e;
-    }
+.logout{
+  background:#e5e9e7;
+  color:#222;
+}
 
-    .success {
-      background: #e4f6e9;
-      color: #176b32;
-    }
+.status{
+  display:none;
+  padding:14px;
+  margin-bottom:16px;
+  border-radius:8px;
+  line-height:1.5;
+  white-space:pre-wrap;
+}
 
-    .payments {
-      display: grid;
-      gap: 15px;
-    }
+.status.show{
+  display:block;
+}
 
-    .payment {
-      background: white;
-      border-radius: 12px;
-      padding: 18px;
-      box-shadow: 0 2px 10px rgba(0,0,0,.06);
-    }
+.status.error{
+  background:#ffe4e4;
+  color:#8a1717;
+}
 
-    .payment-header {
-      display: flex;
-      justify-content: space-between;
-      gap: 15px;
-      flex-wrap: wrap;
-      margin-bottom: 15px;
-    }
+.status.success{
+  background:#e2f5e7;
+  color:#17652f;
+}
 
-    .amount {
-      font-size: 22px;
-      font-weight: 700;
-    }
+.status.info{
+  background:#e8f1ff;
+  color:#164477;
+}
 
-    .pending {
-      color: #9a6500;
-      font-weight: 700;
-    }
+.loading,
+.empty{
+  background:#fff;
+  padding:35px;
+  border-radius:12px;
+  text-align:center;
+  color:#68716c;
+}
 
-    .approved {
-      color: #16733a;
-      font-weight: 700;
-    }
+.payments{
+  display:grid;
+  gap:16px;
+}
 
-    .rejected {
-      color: #a52b2b;
-      font-weight: 700;
-    }
+.payment{
+  background:#fff;
+  border-radius:12px;
+  padding:18px;
+  box-shadow:0 2px 10px rgba(0,0,0,.06);
+}
 
-    .details {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 10px;
-      font-size: 14px;
-    }
+.payment-top{
+  display:flex;
+  justify-content:space-between;
+  gap:15px;
+  flex-wrap:wrap;
+  margin-bottom:16px;
+}
 
-    .detail {
-      background: #f7f8f8;
-      padding: 10px;
-      border-radius: 7px;
-    }
+.amount{
+  font-size:25px;
+  font-weight:800;
+}
 
-    .label {
-      display: block;
-      color: #6b746f;
-      font-size: 12px;
-      margin-bottom: 3px;
-    }
+.status-label{
+  margin-top:5px;
+  font-weight:700;
+}
 
-    .actions {
-      display: flex;
-      gap: 10px;
-      margin-top: 16px;
-    }
+.pending{
+  color:#9a6500;
+}
 
-    .approve {
-      background: #19733d;
-      color: white;
-    }
+.approved{
+  color:#17723a;
+}
 
-    .reject {
-      background: #b72b2b;
-      color: white;
-    }
+.rejected{
+  color:#a52828;
+}
 
-    button:disabled {
-      opacity: .5;
-      cursor: not-allowed;
-    }
+.details{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(210px,1fr));
+  gap:10px;
+}
 
-    .empty {
-      background: white;
-      padding: 35px;
-      text-align: center;
-      border-radius: 12px;
-      color: #68716c;
-    }
+.detail{
+  background:#f6f8f7;
+  padding:11px;
+  border-radius:7px;
+  word-break:break-word;
+}
 
-    .loading {
-      text-align: center;
-      padding: 30px;
-    }
-  </style>
+.label{
+  display:block;
+  font-size:12px;
+  color:#68716c;
+  margin-bottom:4px;
+}
+
+.actions{
+  display:flex;
+  gap:10px;
+  margin-top:17px;
+}
+
+.approve{
+  background:#19733d;
+  color:white;
+}
+
+.reject{
+  background:#b72b2b;
+  color:white;
+}
+
+.proof{
+  margin-top:15px;
+}
+
+.proof a{
+  color:#155d2a;
+  font-weight:700;
+}
+
+.debug{
+  margin-top:16px;
+  padding:12px;
+  background:#111;
+  color:#b8ffbf;
+  border-radius:8px;
+  font-family:monospace;
+  font-size:12px;
+  white-space:pre-wrap;
+  overflow:auto;
+}
+
+@media(max-width:600px){
+  .actions{
+    flex-direction:column;
+  }
+
+  .actions button{
+    width:100%;
+  }
+}
+</style>
 </head>
 
 <body>
 
 <header>
-  <h1>TIMB3R Admin</h1>
+  <h1>🌲 TIMB3R Admin</h1>
   <p>Bank payment review</p>
 </header>
 
 <main>
 
-  <div class="toolbar">
-    <div>
-      <strong>Payment submissions</strong>
-    </div>
+<div class="toolbar">
 
-    <div>
-      <button class="refresh" onclick="loadPayments()">Refresh</button>
-      <button class="logout" onclick="logout()">Log out</button>
-    </div>
+  <strong>Payment submissions</strong>
+
+  <div>
+    <button
+      class="refresh"
+      id="refreshBtn"
+      onclick="loadPayments()">
+      Refresh
+    </button>
+
+    <button
+      class="logout"
+      onclick="logout()">
+      Log out
+    </button>
   </div>
 
-  <div id="status" class="status"></div>
+</div>
 
-  <div id="payments" class="payments">
-    <div class="loading">Loading payments...</div>
+<div id="status" class="status"></div>
+
+<div id="payments" class="payments">
+
+  <div class="loading">
+    Loading payments...
   </div>
+
+</div>
 
 </main>
 
 <script>
-  const token =
-    localStorage.getItem("token") ||
-    localStorage.getItem("timb3r_token") ||
-    sessionStorage.getItem("token");
 
-  function showStatus(message, type = "") {
-    const el = document.getElementById("status");
+/*
+====================================================
+TIMB3R ADMIN
+====================================================
 
-    el.textContent = message;
-    el.className = "status " + type;
-    el.style.display = "block";
-  }
+IMPORTANT:
 
-  function hideStatus() {
-    document.getElementById("status").style.display = "none";
-  }
+The normal TIMB3R login stores the JWT as:
 
-  function authHeaders() {
+localStorage.timb3rToken
+
+This page MUST use the same key.
+*/
+
+function getToken(){
+
+  return localStorage.getItem("timb3rToken");
+
+}
+
+
+/*
+====================================================
+AUTH HEADERS
+====================================================
+*/
+
+function authHeaders(){
+
+  const token=getToken();
+
+  if(!token){
+
     return {
-      "Content-Type": "application/json",
-      ...(token ? { "Authorization": "Bearer " + token } : {})
+      "Content-Type":"application/json"
     };
+
   }
 
-  async function loadPayments() {
-    const container = document.getElementById("payments");
+  return {
+    "Content-Type":"application/json",
+    "Authorization":"Bearer "+token
+  };
 
-    container.innerHTML =
-      '<div class="loading">Loading payments...</div>';
+}
 
-    hideStatus();
 
-    try {
-      const response = await fetch("/api/admin/payments", {
-        method: "GET",
-        headers: authHeaders()
-      });
+/*
+====================================================
+STATUS
+====================================================
+*/
 
-      const data = await response.json().catch(() => ({}));
+function showStatus(message,type="info"){
 
-      if (!response.ok) {
+  const box=document.getElementById("status");
+
+  box.textContent=message;
+
+  box.className=
+    "status show status-"+type;
+
+}
+
+
+function clearStatus(){
+
+  const box=document.getElementById("status");
+
+  box.textContent="";
+
+  box.className="status";
+
+}
+
+
+/*
+====================================================
+LOAD PAYMENTS
+====================================================
+*/
+
+async function loadPayments(){
+
+  const token=getToken();
+
+  const container=
+    document.getElementById("payments");
+
+  const button=
+    document.getElementById("refreshBtn");
+
+
+  if(!token){
+
+    container.innerHTML="";
+
+    showStatus(
+      "No TIMB3R login token was found.\n\n"+
+      "Sign in to TIMB3R first, then open /admin.html.",
+      "error"
+    );
+
+    return;
+
+  }
+
+
+  button.disabled=true;
+
+  button.textContent="Loading...";
+
+  clearStatus();
+
+
+  container.innerHTML=
+    '<div class="loading">Loading payments...</div>';
+
+
+  try{
+
+    showStatus(
+      "Connecting to /api/admin/payments...",
+      "info"
+    );
+
+
+    const response=await fetch(
+      "/api/admin/payments",
+      {
+        method:"GET",
+        headers:authHeaders()
+      }
+    );
+
+
+    const text=await response.text();
+
+
+    let data={};
+
+
+    try{
+
+      data=text
+        ? JSON.parse(text)
+        : {};
+
+    }catch(error){
+
+      throw new Error(
+        "Server returned invalid JSON.\n\n"+
+        text.substring(0,500)
+      );
+
+    }
+
+
+    if(!response.ok){
+
+      if(response.status===401){
+
         throw new Error(
-          data.error || `Unable to load payments (${response.status})`
+          "HTTP 401 — Your login token is invalid or expired."
         );
+
       }
 
-      renderPayments(data.payments || []);
+      if(response.status===403){
 
-    } catch (err) {
-      console.error(err);
+        throw new Error(
+          "HTTP 403 — Administrator access required."
+        );
 
-      container.innerHTML = "";
-      showStatus(err.message, "error");
+      }
+
+      throw new Error(
+        data.error ||
+        "Unable to load payments. HTTP "+
+        response.status
+      );
+
     }
+
+
+    /*
+    Expected backend response:
+
+    {
+      "payments":[]
+    }
+    */
+
+
+    const payments=
+      Array.isArray(data)
+        ? data
+        : Array.isArray(data.payments)
+          ? data.payments
+          : [];
+
+
+    renderPayments(payments);
+
+
+    showStatus(
+      "HTTP 200 — Payment API connected successfully.\n\n"+
+      "Payments returned: "+payments.length,
+      "success"
+    );
+
+
+  }catch(error){
+
+    console.error(
+      "Admin payment loading error:",
+      error
+    );
+
+
+    container.innerHTML="";
+
+
+    showStatus(
+      error.message ||
+      "Unable to load payments.",
+      "error"
+    );
+
+
+  }finally{
+
+    button.disabled=false;
+
+    button.textContent="Refresh";
+
   }
 
-  function renderPayments(payments) {
-    const container = document.getElementById("payments");
+}
 
-    if (!payments.length) {
-      container.innerHTML =
-        '<div class="empty">No bank payments found.</div>';
-      return;
-    }
 
-    container.innerHTML = payments.map(payment => {
-      const status = String(payment.status || "").toLowerCase();
+/*
+====================================================
+RENDER PAYMENTS
+====================================================
+*/
 
-      const amount = Number(payment.amount || 0)
-        .toLocaleString("en-ZA", {
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2
-        });
+function renderPayments(payments){
 
-      const date = payment.payment_date
-        ? new Date(payment.payment_date).toLocaleString()
-        : "Not supplied";
+  const container=
+    document.getElementById("payments");
 
-      const created = payment.created_at
-        ? new Date(payment.created_at).toLocaleString()
-        : "Unknown";
 
-      const pending = status === "pending";
+  if(!payments.length){
+
+    container.innerHTML=`
+
+      <div class="empty">
+
+        <h3>No bank payments found</h3>
+
+        <p>
+          The API responded successfully, but there
+          are currently no records in
+          <b>bank_payments</b>.
+        </p>
+
+      </div>
+
+    `;
+
+    return;
+
+  }
+
+
+  container.innerHTML=
+    payments.map(payment=>{
+
+      const status=
+        String(
+          payment.status || "unknown"
+        ).toLowerCase();
+
+
+      const amount=
+        Number(
+          payment.amount || 0
+        ).toLocaleString(
+          "en-ZA",
+          {
+            minimumFractionDigits:2,
+            maximumFractionDigits:2
+          }
+        );
+
+
+      const paymentDate=
+        payment.payment_date
+          ? new Date(
+              payment.payment_date
+            ).toLocaleString()
+          : "Not supplied";
+
+
+      const created=
+        payment.created_at
+          ? new Date(
+              payment.created_at
+            ).toLocaleString()
+          : "Unknown";
+
+
+      const reviewed=
+        payment.reviewed_at
+          ? new Date(
+              payment.reviewed_at
+            ).toLocaleString()
+          : "Not reviewed";
+
+
+      const pending=
+        status==="pending";
+
 
       return `
+
         <div class="payment">
 
-          <div class="payment-header">
+          <div class="payment-top">
+
             <div>
+
               <div class="amount">
                 R ${escapeHtml(amount)}
               </div>
 
-              <div class="${escapeHtml(status)}">
-                ${escapeHtml(status.toUpperCase())}
+              <div class="status-label ${escapeHtml(status)}">
+                ${escapeHtml(
+                  status.toUpperCase()
+                )}
               </div>
+
             </div>
+
           </div>
+
 
           <div class="details">
 
-            <div class="detail">
-              <span class="label">Profile reference</span>
-              ${escapeHtml(payment.profile_reference || "—")}
-            </div>
 
             <div class="detail">
-              <span class="label">Sender</span>
-              ${escapeHtml(payment.sender_name || "—")}
+
+              <span class="label">
+                Profile reference
+              </span>
+
+              ${escapeHtml(
+                payment.profile_reference || "—"
+              )}
+
             </div>
 
-            <div class="detail">
-              <span class="label">Sender bank</span>
-              ${escapeHtml(payment.sender_bank || "—")}
-            </div>
 
             <div class="detail">
-              <span class="label">Payment date</span>
-              ${escapeHtml(date)}
+
+              <span class="label">
+                Customer
+              </span>
+
+              ${escapeHtml(
+                payment.customer_name || "—"
+              )}
+
             </div>
 
+
             <div class="detail">
-              <span class="label">Submitted</span>
+
+              <span class="label">
+                Customer email
+              </span>
+
+              ${escapeHtml(
+                payment.customer_email || "—"
+              )}
+
+            </div>
+
+
+            <div class="detail">
+
+              <span class="label">
+                Sender name
+              </span>
+
+              ${escapeHtml(
+                payment.sender_name || "—"
+              )}
+
+            </div>
+
+
+            <div class="detail">
+
+              <span class="label">
+                Sender bank
+              </span>
+
+              ${escapeHtml(
+                payment.sender_bank || "—"
+              )}
+
+            </div>
+
+
+            <div class="detail">
+
+              <span class="label">
+                Payment date
+              </span>
+
+              ${escapeHtml(paymentDate)}
+
+            </div>
+
+
+            <div class="detail">
+
+              <span class="label">
+                Submitted
+              </span>
+
               ${escapeHtml(created)}
+
             </div>
 
+
             <div class="detail">
-              <span class="label">Payment ID</span>
-              ${escapeHtml(payment.id || "—")}
+
+              <span class="label">
+                Reviewed
+              </span>
+
+              ${escapeHtml(reviewed)}
+
             </div>
+
+
+            <div class="detail">
+
+              <span class="label">
+                Payment ID
+              </span>
+
+              ${escapeHtml(
+                payment.id || "—"
+              )}
+
+            </div>
+
+
+            <div class="detail">
+
+              <span class="label">
+                Admin note
+              </span>
+
+              ${escapeHtml(
+                payment.admin_note || "—"
+              )}
+
+            </div>
+
 
           </div>
 
-          ${
-            pending
-              ? `
-                <div class="actions">
-                  <button
-                    class="approve"
-                    onclick="approvePayment('${escapeJs(payment.id)}')">
-                    Approve
-                  </button>
 
-                  <button
-                    class="reject"
-                    onclick="rejectPayment('${escapeJs(payment.id)}')">
-                    Reject
-                  </button>
+          ${
+            payment.proof_url
+              ? `
+
+                <div class="proof">
+
+                  <a
+                    href="${escapeHtml(
+                      payment.proof_url
+                    )}"
+                    target="_blank"
+                    rel="noopener">
+                    View payment proof
+                  </a>
+
                 </div>
+
               `
               : ""
           }
 
+
+          ${
+            pending
+              ? `
+
+                <div class="actions">
+
+                  <button
+                    class="approve"
+                    onclick="approvePayment(
+                      '${escapeJs(payment.id)}'
+                    )">
+                    Approve
+                  </button>
+
+
+                  <button
+                    class="reject"
+                    onclick="rejectPayment(
+                      '${escapeJs(payment.id)}'
+                    )">
+                    Reject
+                  </button>
+
+                </div>
+
+              `
+              : ""
+          }
+
+
         </div>
+
       `;
+
     }).join("");
+
+}
+
+
+/*
+====================================================
+APPROVE
+====================================================
+*/
+
+async function approvePayment(id){
+
+  const note=prompt(
+    "Admin note:",
+    "Payment manually verified"
+  );
+
+
+  if(note===null){
+
+    return;
+
   }
 
-  async function approvePayment(id) {
-    const note = prompt(
-      "Optional admin note:",
-      "Payment manually verified"
-    );
 
-    if (note === null) return;
+  await updatePayment(
+    "/api/admin/payments/"+
+    encodeURIComponent(id)+
+    "/approve",
+    note,
+    "Payment approved successfully."
+  );
 
-    await changePaymentStatus(
-      `/api/admin/payments/${encodeURIComponent(id)}/approve`,
-      note,
-      "Payment approved"
-    );
+}
+
+
+/*
+====================================================
+REJECT
+====================================================
+*/
+
+async function rejectPayment(id){
+
+  const note=prompt(
+    "Reason for rejection:",
+    "Payment rejected"
+  );
+
+
+  if(note===null){
+
+    return;
+
   }
 
-  async function rejectPayment(id) {
-    const note = prompt(
-      "Reason for rejection:",
-      "Payment rejected"
-    );
 
-    if (note === null) return;
+  await updatePayment(
+    "/api/admin/payments/"+
+    encodeURIComponent(id)+
+    "/reject",
+    note,
+    "Payment rejected."
+  );
 
-    await changePaymentStatus(
-      `/api/admin/payments/${encodeURIComponent(id)}/reject`,
-      note,
-      "Payment rejected"
-    );
-  }
+}
 
-  async function changePaymentStatus(url, note, successMessage) {
-    hideStatus();
 
-    try {
-      const response = await fetch(url, {
-        method: "POST",
-        headers: authHeaders(),
-        body: JSON.stringify({ note })
-      });
+/*
+====================================================
+UPDATE PAYMENT
+====================================================
+*/
 
-      const data = await response.json().catch(() => ({}));
+async function updatePayment(
+  url,
+  note,
+  successMessage
+){
 
-      if (!response.ok) {
-        throw new Error(
-          data.error || `Request failed (${response.status})`
-        );
-      }
+  if(!getToken()){
 
-      showStatus(
-        data.message || successMessage,
-        "success"
-      );
-
-      await loadPayments();
-
-    } catch (err) {
-      console.error(err);
-      showStatus(err.message, "error");
-    }
-  }
-
-  function logout() {
-    localStorage.removeItem("token");
-    localStorage.removeItem("timb3r_token");
-    sessionStorage.removeItem("token");
-
-    window.location.href = "/";
-  }
-
-  function escapeHtml(value) {
-    return String(value ?? "")
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#039;");
-  }
-
-  function escapeJs(value) {
-    return String(value ?? "")
-      .replace(/\\/g, "\\\\")
-      .replace(/'/g, "\\'");
-  }
-
-  if (!token) {
     showStatus(
-      "You are not signed in. Log in with your admin account first.",
+      "Your login session is missing. Please sign in again.",
       "error"
     );
-  } else {
-    loadPayments();
+
+    return;
+
   }
+
+
+  try{
+
+    const response=await fetch(
+      url,
+      {
+        method:"POST",
+        headers:authHeaders(),
+        body:JSON.stringify({
+          note:note
+        })
+      }
+    );
+
+
+    const text=
+      await response.text();
+
+
+    let data={};
+
+
+    try{
+
+      data=text
+        ? JSON.parse(text)
+        : {};
+
+    }catch(error){
+
+      data={};
+
+    }
+
+
+    if(!response.ok){
+
+      throw new Error(
+        data.error ||
+        "Request failed. HTTP "+
+        response.status
+      );
+
+    }
+
+
+    showStatus(
+      data.message ||
+      successMessage,
+      "success"
+    );
+
+
+    await loadPayments();
+
+
+  }catch(error){
+
+    console.error(error);
+
+    showStatus(
+      error.message ||
+      "Payment update failed.",
+      "error"
+    );
+
+  }
+
+}
+
+
+/*
+====================================================
+LOGOUT
+====================================================
+*/
+
+function logout(){
+
+  localStorage.removeItem(
+    "timb3rToken"
+  );
+
+  localStorage.removeItem(
+    "token"
+  );
+
+  localStorage.removeItem(
+    "timb3r_token"
+  );
+
+  sessionStorage.removeItem(
+    "token"
+  );
+
+  window.location.href="/";
+
+}
+
+
+/*
+====================================================
+HTML ESCAPING
+====================================================
+*/
+
+function escapeHtml(value){
+
+  return String(value ?? "")
+    .replace(/&/g,"&amp;")
+    .replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;")
+    .replace(/"/g,"&quot;")
+    .replace(/'/g,"&#039;");
+
+}
+
+
+function escapeJs(value){
+
+  return String(value ?? "")
+    .replace(/\\/g,"\\\\")
+    .replace(/'/g,"\\'");
+
+}
+
+
+/*
+====================================================
+START
+====================================================
+*/
+
+if(!getToken()){
+
+  showStatus(
+    "You are not signed in.\n\n"+
+    "Sign in with your TIMB3R admin account first.",
+    "error"
+  );
+
+}else{
+
+  loadPayments();
+
+}
+
 </script>
 
 </body>
