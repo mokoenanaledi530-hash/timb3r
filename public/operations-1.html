@@ -43,13 +43,29 @@
       renderUsers();$('transactions').innerHTML=transactions.length?transactions.map(t=>'<tr><td>'+esc(t.reference)+'</td><td>'+esc(t.email)+'</td><td>'+esc(t.type)+'</td><td>'+money(t.amount)+'</td><td>'+badge(t.status)+'</td><td>'+date(t.created_at)+'</td></tr>').join(''):'<tr><td colspan="6" class="empty">No transactions yet.</td></tr>'}
     function renderUsers(){const q=$('userSearch').value.toLowerCase();const list=users.filter(u=>(u.name+' '+u.email).toLowerCase().includes(q));$('users').innerHTML=list.length?list.map(u=>'<article class="row"><div class="row-top"><div><div class="user-name">'+esc(u.name||'Unnamed tester')+'</div><div class="meta">'+esc(u.email)+' · joined '+date(u.created_at)+'</div></div><div>'+badge(u.kyc_status)+' <span class="badge">'+esc(u.role)+'</span></div></div></article>').join(''):'<p class="empty">No matching tester accounts.</p>'}
     async function review(id,action){const note=prompt(action==='approve'?'Verification note:':'Reason for rejection:',action==='approve'?'Payment manually verified':'Payment rejected');if(note===null)return;try{await api('/api/admin/payments/'+encodeURIComponent(id)+'/'+action,{method:'POST',body:JSON.stringify({note})});show(action==='approve'?'Payment approved.':'Payment rejected.');await load()}catch(e){show(e.message,true)}}
-    const [userData,paymentData,transactionData]=await Promise.all([api('/api/admin/users'),api('/api/admin/payments'),api('/api/admin/transactions')]);
-users=Array.isArray(userData)?userData:[];
-payments=Array.isArray(paymentData)?paymentData:(Array.isArray(paymentData.payments)?paymentData.payments:[]);
-transactions=Array.isArray(transactionData)?transactionData:[];render()}catch(e){if(/Authentication|permissions/i.test(e.message)){signout();$('loginMessage').textContent='Your session expired or does not have operations access.';$('loginMessage').className='message error'}else show(e.message,true)}}
+    async function load(){try{
+  const [userData,paymentData,transactionData]=await Promise.all([
+    api('/api/admin/users'),
+    api('/api/admin/payments'),
+    api('/api/admin/transactions')
+  ]);
+  users=Array.isArray(userData)?userData:[];
+  payments=Array.isArray(paymentData)?paymentData:(Array.isArray(paymentData.payments)?paymentData.payments:[]);
+  transactions=Array.isArray(transactionData)?transactionData:[];
+  render();
+}catch(e){
+  if(/Authentication|permissions/i.test(e.message)){
+    signout();
+    $('loginMessage').textContent='Your session expired or does not have operations access.';
+    $('loginMessage').className='message error';
+  }else{
+    show(e.message,true);
+  }
+}}
     function signout(){localStorage.removeItem('timb3rOperationsToken');localStorage.removeItem('timb3rOperationsUser');$('appScreen').classList.add('hidden');$('loginScreen').classList.remove('hidden')}
     function start(){const u=JSON.parse(localStorage.getItem('timb3rOperationsUser')||'{}');$('operator').textContent='Signed in as '+(u.name||u.email)+' · '+u.role;$('loginScreen').classList.add('hidden');$('appScreen').classList.remove('hidden');load()}
     $('loginForm').addEventListener('submit',login);$('logout').addEventListener('click',signout);$('refresh').addEventListener('click',load);$('userSearch').addEventListener('input',renderUsers);if(token())start();
   </script>
 </body>
 </html>
+
