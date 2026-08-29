@@ -142,27 +142,11 @@ Create account
 </div>
 </div>
 
-<div class="card">
-  <h2>Demo Deposit</h2>
-  <p class="muted">Testing only — no real funds move.</p>
-  <button id="demoDepositBtn" onclick="demoDeposit()">
-    Add R1,000 Demo Deposit
-  </button>
-  <div id="depositStatus" class="status-box"></div>
-</div>
 
 <div class="tabs"> 
 <div class="card">
 <div class="muted">Invested</div>
 <div id="invested" class="value">R0.00</div>
-</div>
-<div class="card">
-  <h2>Demo Deposit</h2>
-  <p class="muted">Testing only — no real funds move.</p>
-  <button id="demoDepositBtn" onclick="demoDeposit()">
-    Add R1,000 Demo Deposit
-  </button>
-  <div id="depositStatus" class="status-box"></div>
 </div>
 <div class="card">
 <div class="muted">Returns</div>
@@ -841,73 +825,6 @@ error.message
 
 }
 
-async function demoDeposit(){
-
-  const button=$('demoDepositBtn');
-
-  button.disabled=true;
-  button.textContent='Adding R1,000...';
-
-  try{
-
-    const result=await apiRequest(
-      '/api/deposits',
-      {
-        method:'POST',
-        headers:{
-          ...headers(),
-          'Content-Type':'application/json'
-        },
-        body:JSON.stringify({
-          amount:1000
-        })
-      },
-      'depositStatus'
-    );
-
-    const d=result.data;
-
-    if(result.ok){
-
-      showStatus(
-        'depositStatus',
-        'Demo deposit created.\n\n'+
-        'Reference: '+(d.reference || 'N/A')+
-        '\nStatus: '+(d.status || 'pending')+
-        '\n\nNo real funds moved.',
-        'success'
-      );
-
-      await load();
-
-    }else{
-
-      showStatus(
-        'depositStatus',
-        'Demo deposit failed.\n\n'+
-        (d.error || 'Unknown server error'),
-        'error'
-      );
-
-    }
-
-  }catch(error){
-
-    showStatus(
-      'depositStatus',
-      'Demo deposit request failed.\n\n'+
-      error.message,
-      'error'
-    );
-
-  }finally{
-
-    button.disabled=false;
-    button.textContent='Add R1,000 Demo Deposit';
-
-  }
-
-}
 function tab(id,b){
 
 document
@@ -935,3 +852,4 @@ load();
 
 </body>
 </html>
+
