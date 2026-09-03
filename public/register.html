@@ -55,7 +55,7 @@ async function register(){
           "Content-Type":"application/json"
         },
         body:JSON.stringify({
-          fullName:
+          name:
             document.getElementById("fullName").value,
           email:
             document.getElementById("email").value,
@@ -75,13 +75,12 @@ async function register(){
     return;
   }
 
-  localStorage.setItem(
-    "timb3rToken",
-    data.token
-  );
+  document.getElementById("status").textContent =
+    "Account created successfully. Please sign in.";
 
-  location.href =
-    "/dashboard.html";
+  setTimeout(() => {
+    location.href = "/login.html";
+  }, 700);
 }
 </script>
 
