@@ -1,90 +1,90 @@
 <!doctype html>
 <html>
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Investor Login | TIMB3R</title>
-  <link rel="stylesheet" href="/styles.css">
+<meta charset="utf-8">
+<meta name="viewport"
+content="width=device-width,initial-scale=1">
+<title>Login</title>
+<link rel="stylesheet" href="/styles.css">
 </head>
+
 <body>
 
-<div class="auth-page">
+<div class="form-wrap">
 
-  <section class="auth-brand">
-    <div class="logo">TIMB<span>3</span>R</div>
-    <h1>Welcome back.</h1>
-    <p>Access your forestry investment dashboard and portfolio.</p>
-  </section>
+<div class="brand">TIMB3R</div>
 
-  <section class="auth-area">
-    <div class="auth-box">
-      <div class="eyebrow">Investor Portal</div>
-      <h2>Sign in</h2>
+<h1>Investor login</h1>
 
-      <form id="loginForm">
-        <div class="field">
-          <label>Email</label>
-          <input id="email" type="email" required>
-        </div>
+<input
+id="email"
+type="email"
+placeholder="Email">
 
-        <div class="field">
-          <label>Password</label>
-          <input id="password" type="password" required>
-        </div>
+<input
+id="password"
+type="password"
+placeholder="Password">
 
-        <button class="btn btn-green full">Sign In</button>
-      </form>
+<button
+class="btn"
+onclick="login()">
+Sign in
+</button>
 
-      <div id="status" class="status"></div>
-
-      <p class="small">
-        Don't have an account?
-        <a href="/register.html">Register here</a>
-      </p>
-
-      <p class="small"><a href="/">← Back to TIMB3R</a></p>
-    </div>
-  </section>
+<div
+id="status"
+class="status">
+</div>
 
 </div>
 
 <script>
-const form = document.getElementById("loginForm");
-const statusBox = document.getElementById("status");
+async function login(){
 
-form.addEventListener("submit", async (e) => {
-  e.preventDefault();
+  const response =
+    await fetch(
+      "/api/auth/login",
+      {
+        method:"POST",
+        headers:{
+          "Content-Type":"application/json"
+        },
+        body:JSON.stringify({
+          email:
+            document.getElementById("email").value,
+          password:
+            document.getElementById("password").value
+        })
+      }
+    );
 
-  statusBox.className = "status";
-  statusBox.style.display = "block";
-  statusBox.textContent = "Connecting...";
+  const data =
+    await response.json();
 
-  try {
-    const res = await fetch("/api/auth/login", {
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({
-        email:document.getElementById("email").value.trim(),
-        password:document.getElementById("password").value
-      })
-    });
-
-    const data = await res.json();
-
-    if (!res.ok) throw new Error(data.error || data.message || "Invalid login");
-
-    localStorage.setItem("timb3rToken", data.token);
-
-    statusBox.className = "status ok";
-    statusBox.textContent = "Login successful";
-
-    location.href="/dashboard.html";
-
-  } catch(err) {
-    statusBox.className="status error";
-    statusBox.textContent=err.message;
+  if(!response.ok){
+    document.getElementById("status")
+      .textContent =
+      data.error;
+    return;
   }
-});
+
+  localStorage.setItem(
+    "timb3rToken",
+    data.token
+  );
+
+  if(
+    data.user.role === "admin" ||
+    data.user.role === "compliance"
+  ){
+    location.href =
+      "/admin.html";
+  }else{
+    location.href =
+      "/dashboard.html";
+  }
+}
 </script>
 
 </body>

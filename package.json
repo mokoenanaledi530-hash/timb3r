@@ -1,21 +1,16 @@
 {
   "name": "timb3r",
-  "version": "0.2.0",
-  "description": "TIMB3R investment platform",
+  "version": "1.0.0",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
-    "test": "node --check server.js"
-  },
-  "engines": {
-    "node": ">=18"
+    "start": "node server.js"
   },
   "dependencies": {
-    "bcrypt": "^5.1.1",
-    "bcryptjs": "^3.0.3",
-    "express": "^5.1.0",
-    "helmet": "^8.1.0",
+    "bcryptjs": "^2.4.3",
+    "dotenv": "^16.6.1",
+    "express": "^4.21.2",
+    "helmet": "^8.0.0",
     "jsonwebtoken": "^9.0.2",
-    "pg": "^8.16.3"
+    "pg": "^8.23.0"
   }
 }

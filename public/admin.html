@@ -1,1038 +1,130 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html>
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>TIMB3R Admin — Payments</title>
-
-<style>
-*{box-sizing:border-box}
-
-body{
-  margin:0;
-  font-family:Arial,system-ui,sans-serif;
-  background:#f4f7f5;
-  color:#17221c;
-}
-
-header{
-  background:#123c2a;
-  color:#fff;
-  padding:20px;
-}
-
-header h1{
-  margin:0;
-  font-size:24px;
-}
-
-header p{
-  margin:6px 0 0;
-  opacity:.85;
-}
-
-main{
-  width:min(1100px,100%);
-  margin:25px auto;
-  padding:0 16px;
-}
-
-.toolbar{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  gap:12px;
-  flex-wrap:wrap;
-  margin-bottom:18px;
-}
-
-button{
-  border:0;
-  border-radius:8px;
-  padding:11px 16px;
-  font-weight:700;
-  cursor:pointer;
-}
-
-button:disabled{
-  opacity:.6;
-  cursor:not-allowed;
-}
-
-.refresh{
-  background:#123c2a;
-  color:#fff;
-}
-
-.logout{
-  background:#e5e9e7;
-  color:#222;
-}
-
-.status{
-  display:none;
-  padding:14px;
-  margin-bottom:16px;
-  border-radius:8px;
-  line-height:1.5;
-  white-space:pre-wrap;
-}
-
-.status.show{
-  display:block;
-}
-
-.status.error{
-  background:#ffe4e4;
-  color:#8a1717;
-}
-
-.status.success{
-  background:#e2f5e7;
-  color:#17652f;
-}
-
-.status.info{
-  background:#e8f1ff;
-  color:#164477;
-}
-
-.loading,
-.empty{
-  background:#fff;
-  padding:35px;
-  border-radius:12px;
-  text-align:center;
-  color:#68716c;
-}
-
-.payments{
-  display:grid;
-  gap:16px;
-}
-
-.payment{
-  background:#fff;
-  border-radius:12px;
-  padding:18px;
-  box-shadow:0 2px 10px rgba(0,0,0,.06);
-}
-
-.payment-top{
-  display:flex;
-  justify-content:space-between;
-  gap:15px;
-  flex-wrap:wrap;
-  margin-bottom:16px;
-}
-
-.amount{
-  font-size:25px;
-  font-weight:800;
-}
-
-.status-label{
-  margin-top:5px;
-  font-weight:700;
-}
-
-.pending{
-  color:#9a6500;
-}
-
-.approved{
-  color:#17723a;
-}
-
-.rejected{
-  color:#a52828;
-}
-
-.details{
-  display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(210px,1fr));
-  gap:10px;
-}
-
-.detail{
-  background:#f6f8f7;
-  padding:11px;
-  border-radius:7px;
-  word-break:break-word;
-}
-
-.label{
-  display:block;
-  font-size:12px;
-  color:#68716c;
-  margin-bottom:4px;
-}
-
-.actions{
-  display:flex;
-  gap:10px;
-  margin-top:17px;
-}
-
-.approve{
-  background:#19733d;
-  color:white;
-}
-
-.reject{
-  background:#b72b2b;
-  color:white;
-}
-
-.proof{
-  margin-top:15px;
-}
-
-.proof a{
-  color:#155d2a;
-  font-weight:700;
-}
-
-.debug{
-  margin-top:16px;
-  padding:12px;
-  background:#111;
-  color:#b8ffbf;
-  border-radius:8px;
-  font-family:monospace;
-  font-size:12px;
-  white-space:pre-wrap;
-  overflow:auto;
-}
-
-@media(max-width:600px){
-  .actions{
-    flex-direction:column;
-  }
-
-  .actions button{
-    width:100%;
-  }
-}
-</style>
+<meta charset="utf-8">
+<meta name="viewport"
+content="width=device-width,initial-scale=1">
+<title>TIMB3R Admin</title>
+<link rel="stylesheet" href="/styles.css">
 </head>
 
 <body>
 
-<header>
-  <h1>🌲 TIMB3R Admin</h1>
-  <p>Bank payment review</p>
-</header>
-
-<main>
-
-<div class="toolbar">
-
-  <strong>Payment submissions</strong>
-
-  <div>
-    <button
-      class="refresh"
-      id="refreshBtn"
-      onclick="loadPayments()">
-      Refresh
-    </button>
-
-    <button
-      class="logout"
-      onclick="logout()">
-      Log out
-    </button>
-  </div>
-
+<nav>
+<div class="brand">
+TIMB3R ADMIN
 </div>
 
-<div id="status" class="status"></div>
+<a href="#"
+onclick="logout()">
+Logout
+</a>
+</nav>
 
-<div id="payments" class="payments">
+<main class="container">
 
-  <div class="loading">
-    Loading payments...
-  </div>
+<h1>
+Operations Dashboard
+</h1>
 
+<h2>
+Users
+</h2>
+
+<div id="users">
+Loading...
+</div>
+
+<h2>
+Investment applications
+</h2>
+
+<div id="investments">
+Loading...
 </div>
 
 </main>
 
 <script>
 
-/*
-====================================================
-TIMB3R ADMIN
-====================================================
+const token =
+localStorage.getItem(
+  "timb3rToken"
+);
 
-IMPORTANT:
-
-The normal TIMB3R login stores the JWT as:
-
-localStorage.timb3rToken
-
-This page MUST use the same key.
-*/
-
-function getToken(){
-
-  return localStorage.getItem("timb3rToken");
-
-}
-
-
-/*
-====================================================
-AUTH HEADERS
-====================================================
-*/
-
-function authHeaders(){
-
-  const token=getToken();
-
-  if(!token){
-
-    return {
-      "Content-Type":"application/json"
-    };
-
-  }
-
+function headers(){
   return {
-    "Content-Type":"application/json",
-    "Authorization":"Bearer "+token
+    "Authorization":
+      "Bearer "+token
   };
-
 }
 
+async function load(){
 
-/*
-====================================================
-STATUS
-====================================================
-*/
-
-function showStatus(message,type="info"){
-
-  const box=document.getElementById("status");
-
-  box.textContent=message;
-
-  box.className=
-    "status show status-"+type;
-
-}
-
-
-function clearStatus(){
-
-  const box=document.getElementById("status");
-
-  box.textContent="";
-
-  box.className="status";
-
-}
-
-
-/*
-====================================================
-LOAD PAYMENTS
-====================================================
-*/
-
-async function loadPayments(){
-
-  const token=getToken();
-
-  const container=
-    document.getElementById("payments");
-
-  const button=
-    document.getElementById("refreshBtn");
-
-
-  if(!token){
-
-    container.innerHTML="";
-
-    showStatus(
-      "No TIMB3R login token was found.\n\n"+
-      "Sign in to TIMB3R first, then open /admin.html.",
-      "error"
+  const userRes =
+    await fetch(
+      "/api/admin/users",
+      {headers:headers()}
     );
 
+  if(!userRes.ok){
+    location.href =
+      "/dashboard.html";
     return;
-
   }
 
+  const users =
+    await userRes.json();
 
-  button.disabled=true;
-
-  button.textContent="Loading...";
-
-  clearStatus();
-
-
-  container.innerHTML=
-    '<div class="loading">Loading payments...</div>';
-
-
-  try{
-
-    showStatus(
-      "Connecting to /api/admin/payments...",
-      "info"
-    );
-
-
-    const response=await fetch(
-      "/api/admin/payments",
-      {
-        method:"GET",
-        headers:authHeaders()
-      }
-    );
-
-
-    const text=await response.text();
-
-
-    let data={};
-
-
-    try{
-
-      data=text
-        ? JSON.parse(text)
-        : {};
-
-    }catch(error){
-
-      throw new Error(
-        "Server returned invalid JSON.\n\n"+
-        text.substring(0,500)
-      );
-
-    }
-
-
-    if(!response.ok){
-
-      if(response.status===401){
-
-        throw new Error(
-          "HTTP 401 — Your login token is invalid or expired."
-        );
-
-      }
-
-      if(response.status===403){
-
-        throw new Error(
-          "HTTP 403 — Administrator access required."
-        );
-
-      }
-
-      throw new Error(
-        data.error ||
-        "Unable to load payments. HTTP "+
-        response.status
-      );
-
-    }
-
-
-    /*
-    Expected backend response:
-
-    {
-      "payments":[]
-    }
-    */
-
-
-    const payments=
-      Array.isArray(data)
-        ? data
-        : Array.isArray(data.payments)
-          ? data.payments
-          : [];
-
-
-    renderPayments(payments);
-
-
-    showStatus(
-      "HTTP 200 — Payment API connected successfully.\n\n"+
-      "Payments returned: "+payments.length,
-      "success"
-    );
-
-
-  }catch(error){
-
-    console.error(
-      "Admin payment loading error:",
-      error
-    );
-
-
-    container.innerHTML="";
-
-
-    showStatus(
-      error.message ||
-      "Unable to load payments.",
-      "error"
-    );
-
-
-  }finally{
-
-    button.disabled=false;
-
-    button.textContent="Refresh";
-
-  }
-
-}
-
-
-/*
-====================================================
-RENDER PAYMENTS
-====================================================
-*/
-
-function renderPayments(payments){
-
-  const container=
-    document.getElementById("payments");
-
-
-  if(!payments.length){
-
-    container.innerHTML=`
-
-      <div class="empty">
-
-        <h3>No bank payments found</h3>
-
-        <p>
-          The API responded successfully, but there
-          are currently no records in
-          <b>bank_payments</b>.
-        </p>
-
+  document.getElementById(
+    "users"
+  ).innerHTML =
+    users.map(
+      u => `
+      <div class="card">
+      <strong>${u.full_name}</strong>
+      <p>${u.email}</p>
+      <p>${u.role}</p>
+      <p>KYC: ${u.kyc_status}</p>
       </div>
-
-    `;
-
-    return;
-
-  }
-
-
-  container.innerHTML=
-    payments.map(payment=>{
-
-      const status=
-        String(
-          payment.status || "unknown"
-        ).toLowerCase();
-
-
-      const amount=
-        Number(
-          payment.amount || 0
-        ).toLocaleString(
-          "en-ZA",
-          {
-            minimumFractionDigits:2,
-            maximumFractionDigits:2
-          }
-        );
-
-
-      const paymentDate=
-        payment.payment_date
-          ? new Date(
-              payment.payment_date
-            ).toLocaleString()
-          : "Not supplied";
-
-
-      const created=
-        payment.created_at
-          ? new Date(
-              payment.created_at
-            ).toLocaleString()
-          : "Unknown";
-
-
-      const reviewed=
-        payment.reviewed_at
-          ? new Date(
-              payment.reviewed_at
-            ).toLocaleString()
-          : "Not reviewed";
-
-
-      const pending=
-        status==="pending";
-
-
-      return `
-
-        <div class="payment">
-
-          <div class="payment-top">
-
-            <div>
-
-              <div class="amount">
-                R ${escapeHtml(amount)}
-              </div>
-
-              <div class="status-label ${escapeHtml(status)}">
-                ${escapeHtml(
-                  status.toUpperCase()
-                )}
-              </div>
-
-            </div>
-
-          </div>
-
-
-          <div class="details">
-
-
-            <div class="detail">
-
-              <span class="label">
-                Profile reference
-              </span>
-
-              ${escapeHtml(
-                payment.profile_reference || "—"
-              )}
-
-            </div>
-
-
-            <div class="detail">
-
-              <span class="label">
-                Customer
-              </span>
-
-              ${escapeHtml(
-                payment.customer_name || "—"
-              )}
-
-            </div>
-
-
-            <div class="detail">
-
-              <span class="label">
-                Customer email
-              </span>
-
-              ${escapeHtml(
-                payment.customer_email || "—"
-              )}
-
-            </div>
-
-
-            <div class="detail">
-
-              <span class="label">
-                Sender name
-              </span>
-
-              ${escapeHtml(
-                payment.sender_name || "—"
-              )}
-
-            </div>
-
-
-            <div class="detail">
-
-              <span class="label">
-                Sender bank
-              </span>
-
-              ${escapeHtml(
-                payment.sender_bank || "—"
-              )}
-
-            </div>
-
-
-            <div class="detail">
-
-              <span class="label">
-                Payment date
-              </span>
-
-              ${escapeHtml(paymentDate)}
-
-            </div>
-
-
-            <div class="detail">
-
-              <span class="label">
-                Submitted
-              </span>
-
-              ${escapeHtml(created)}
-
-            </div>
-
-
-            <div class="detail">
-
-              <span class="label">
-                Reviewed
-              </span>
-
-              ${escapeHtml(reviewed)}
-
-            </div>
-
-
-            <div class="detail">
-
-              <span class="label">
-                Payment ID
-              </span>
-
-              ${escapeHtml(
-                payment.id || "—"
-              )}
-
-            </div>
-
-
-            <div class="detail">
-
-              <span class="label">
-                Admin note
-              </span>
-
-              ${escapeHtml(
-                payment.admin_note || "—"
-              )}
-
-            </div>
-
-
-          </div>
-
-
-          ${
-            payment.proof_url
-              ? `
-
-                <div class="proof">
-
-                  <a
-                    href="${escapeHtml(
-                      payment.proof_url
-                    )}"
-                    target="_blank"
-                    rel="noopener">
-                    View payment proof
-                  </a>
-
-                </div>
-
-              `
-              : ""
-          }
-
-
-          ${
-            pending
-              ? `
-
-                <div class="actions">
-
-                  <button
-                    class="approve"
-                    onclick="approvePayment(
-                      '${escapeJs(payment.id)}'
-                    )">
-                    Approve
-                  </button>
-
-
-                  <button
-                    class="reject"
-                    onclick="rejectPayment(
-                      '${escapeJs(payment.id)}'
-                    )">
-                    Reject
-                  </button>
-
-                </div>
-
-              `
-              : ""
-          }
-
-
-        </div>
-
-      `;
-
-    }).join("");
-
-}
-
-
-/*
-====================================================
-APPROVE
-====================================================
-*/
-
-async function approvePayment(id){
-
-  const note=prompt(
-    "Admin note:",
-    "Payment manually verified"
-  );
-
-
-  if(note===null){
-
-    return;
-
-  }
-
-
-  await updatePayment(
-    "/api/admin/payments/"+
-    encodeURIComponent(id)+
-    "/approve",
-    note,
-    "Payment approved successfully."
-  );
-
-}
-
-
-/*
-====================================================
-REJECT
-====================================================
-*/
-
-async function rejectPayment(id){
-
-  const note=prompt(
-    "Reason for rejection:",
-    "Payment rejected"
-  );
-
-
-  if(note===null){
-
-    return;
-
-  }
-
-
-  await updatePayment(
-    "/api/admin/payments/"+
-    encodeURIComponent(id)+
-    "/reject",
-    note,
-    "Payment rejected."
-  );
-
-}
-
-
-/*
-====================================================
-UPDATE PAYMENT
-====================================================
-*/
-
-async function updatePayment(
-  url,
-  note,
-  successMessage
-){
-
-  if(!getToken()){
-
-    showStatus(
-      "Your login session is missing. Please sign in again.",
-      "error"
+      `
+    ).join("");
+
+  const invRes =
+    await fetch(
+      "/api/admin/investments",
+      {headers:headers()}
     );
 
-    return;
+  const investments =
+    await invRes.json();
 
-  }
-
-
-  try{
-
-    const response=await fetch(
-      url,
-      {
-        method:"POST",
-        headers:authHeaders(),
-        body:JSON.stringify({
-          note:note
-        })
-      }
-    );
-
-
-    const text=
-      await response.text();
-
-
-    let data={};
-
-
-    try{
-
-      data=text
-        ? JSON.parse(text)
-        : {};
-
-    }catch(error){
-
-      data={};
-
-    }
-
-
-    if(!response.ok){
-
-      throw new Error(
-        data.error ||
-        "Request failed. HTTP "+
-        response.status
-      );
-
-    }
-
-
-    showStatus(
-      data.message ||
-      successMessage,
-      "success"
-    );
-
-
-    await loadPayments();
-
-
-  }catch(error){
-
-    console.error(error);
-
-    showStatus(
-      error.message ||
-      "Payment update failed.",
-      "error"
-    );
-
-  }
-
+  document.getElementById(
+    "investments"
+  ).innerHTML =
+    investments.map(
+      i => `
+      <div class="card">
+      <strong>${i.email}</strong>
+      <p>
+      ${i.name} ${i.phase || ""}
+      </p>
+      <p>R${i.principal}</p>
+      <p>${i.status}</p>
+      </div>
+      `
+    ).join("");
 }
-
-
-/*
-====================================================
-LOGOUT
-====================================================
-*/
 
 function logout(){
-
   localStorage.removeItem(
     "timb3rToken"
   );
 
-  localStorage.removeItem(
-    "token"
-  );
-
-  localStorage.removeItem(
-    "timb3r_token"
-  );
-
-  sessionStorage.removeItem(
-    "token"
-  );
-
-  window.location.href="/";
-
+  location.href="/login.html";
 }
 
-
-/*
-====================================================
-HTML ESCAPING
-====================================================
-*/
-
-function escapeHtml(value){
-
-  return String(value ?? "")
-    .replace(/&/g,"&amp;")
-    .replace(/</g,"&lt;")
-    .replace(/>/g,"&gt;")
-    .replace(/"/g,"&quot;")
-    .replace(/'/g,"&#039;");
-
-}
-
-
-function escapeJs(value){
-
-  return String(value ?? "")
-    .replace(/\\/g,"\\\\")
-    .replace(/'/g,"\\'");
-
-}
-
-
-/*
-====================================================
-START
-====================================================
-*/
-
-if(!getToken()){
-
-  showStatus(
-    "You are not signed in.\n\n"+
-    "Sign in with your TIMB3R admin account first.",
-    "error"
-  );
-
-}else{
-
-  loadPayments();
-
-}
+load();
 
 </script>
 

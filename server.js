@@ -1,6 +1,6 @@
 const express = require("express");
 const helmet = require("helmet");
-const bcrypt = require("bcrypt");
+const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { Pool } = require("pg");
 const path = require("path");
@@ -13,15 +13,11 @@ const secret =
   process.env.JWT_SECRET ||
   "development-only-secret";
 
-const pool = process.env.DATABASE_URL
-  ? new Pool({
-      connectionString: process.env.DATABASE_URL,
-      ssl:
-        process.env.NODE_ENV === "production"
-          ? { rejectUnauthorized: false }
-          : false
-    })
-  : null;
+const pool = new Pool({
+  connectionString:
+    process.env.DATABASE_URL ||
+    "postgresql://localhost:5432/timb3r"
+});
 
 app.use(
   helmet({

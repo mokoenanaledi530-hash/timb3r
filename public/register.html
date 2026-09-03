@@ -1,92 +1,88 @@
 <!doctype html>
 <html>
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Create Account | TIMB3R</title>
-  <link rel="stylesheet" href="/styles.css">
+<meta charset="utf-8">
+<meta name="viewport"
+content="width=device-width,initial-scale=1">
+<title>Register</title>
+<link rel="stylesheet" href="/styles.css">
 </head>
+
 <body>
 
-<div class="auth-page">
+<div class="form-wrap">
 
-  <section class="auth-brand">
-    <div class="logo">TIMB<span>3</span>R</div>
-    <h1>Start your journey.</h1>
-    <p>Create your investor account and access the TIMB3R platform.</p>
-  </section>
+<div class="brand">TIMB3R</div>
 
-  <section class="auth-area">
-    <div class="auth-box">
-      <div class="eyebrow">New Investor</div>
-      <h2>Create account</h2>
+<h1>Create account</h1>
 
-      <form id="registerForm">
-        <div class="field">
-          <label>Full Name</label>
-          <input id="name" required>
-        </div>
+<input
+id="fullName"
+placeholder="Full name">
 
-        <div class="field">
-          <label>Email</label>
-          <input id="email" type="email" required>
-        </div>
+<input
+id="email"
+type="email"
+placeholder="Email">
 
-        <div class="field">
-          <label>Password</label>
-          <input id="password" type="password" minlength="6" required>
-        </div>
+<input
+id="password"
+type="password"
+placeholder="Password">
 
-        <button class="btn btn-green full">Create Account</button>
-      </form>
+<button
+class="btn"
+onclick="register()">
+Register
+</button>
 
-      <div id="status" class="status"></div>
-
-      <p class="small">
-        Already registered?
-        <a href="/login.html">Sign in</a>
-      </p>
-    </div>
-  </section>
+<div
+id="status"
+class="status">
+</div>
 
 </div>
 
 <script>
-const form=document.getElementById("registerForm");
-const statusBox=document.getElementById("status");
+async function register(){
 
-form.addEventListener("submit",async(e)=>{
-  e.preventDefault();
+  const response =
+    await fetch(
+      "/api/auth/register",
+      {
+        method:"POST",
+        headers:{
+          "Content-Type":"application/json"
+        },
+        body:JSON.stringify({
+          fullName:
+            document.getElementById("fullName").value,
+          email:
+            document.getElementById("email").value,
+          password:
+            document.getElementById("password").value
+        })
+      }
+    );
 
-  statusBox.style.display="block";
-  statusBox.className="status";
-  statusBox.textContent="Creating account...";
+  const data =
+    await response.json();
 
-  try{
-    const res=await fetch("/api/auth/register",{
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({
-        name:document.getElementById("name").value.trim(),
-        email:document.getElementById("email").value.trim(),
-        password:document.getElementById("password").value
-      })
-    });
-
-    const data=await res.json();
-
-    if(!res.ok) throw new Error(data.error || data.message || "Registration failed");
-
-    statusBox.className="status ok";
-    statusBox.textContent="Account created. Redirecting to login...";
-
-    setTimeout(()=>location.href="/login.html",1200);
-
-  }catch(err){
-    statusBox.className="status error";
-    statusBox.textContent=err.message;
+  if(!response.ok){
+    document.getElementById("status")
+      .textContent =
+      data.error;
+    return;
   }
-});
+
+  localStorage.setItem(
+    "timb3rToken",
+    data.token
+  );
+
+  location.href =
+    "/dashboard.html";
+}
 </script>
 
 </body>
