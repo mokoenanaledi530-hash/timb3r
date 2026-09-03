@@ -30,6 +30,31 @@ content="width=device-width,initial-scale=1">
 Loading...
 </p>
 
+<div class="balance-grid">
+
+  <div class="balance-card">
+    <span>Available balance</span>
+    <strong id="availableBalance">R0.00</strong>
+  </div>
+
+  <div class="balance-card">
+    <span>Invested</span>
+    <strong id="investedBalance">R0.00</strong>
+  </div>
+
+  <div class="balance-card">
+    <span>Returns</span>
+    <strong id="returnsBalance">R0.00</strong>
+  </div>
+
+</div>
+
+<div class="dashboard-actions">
+  <a class="btn" href="/payment.html">Deposit funds</a>
+  <a class="btn secondary-btn" href="/withdraw.html">Withdraw</a>
+  <a class="btn secondary-btn" href="/transactions.html">Transactions</a>
+</div>
+
 <h2>Investment packages</h2>
 
 <div
@@ -92,6 +117,38 @@ async function load(){
   const me =
     await meRes.json();
 
+  const dashboardRes =
+    await fetch(
+      "/api/dashboard",
+      {headers:headers()}
+    );
+
+  if (dashboardRes.ok) {
+    const balances =
+      await dashboardRes.json();
+
+    document.getElementById(
+      "availableBalance"
+    ).textContent =
+      `R${Number(
+        balances.available || 0
+      ).toFixed(2)}`;
+
+    document.getElementById(
+      "investedBalance"
+    ).textContent =
+      `R${Number(
+        balances.invested || 0
+      ).toFixed(2)}`;
+
+    document.getElementById(
+      "returnsBalance"
+    ).textContent =
+      `R${Number(
+        balances.returns || 0
+      ).toFixed(2)}`;
+  }
+
   document.getElementById("user")
     .textContent =
     `${me.full_name} • KYC ${me.kyc_status}`;
@@ -138,16 +195,11 @@ async function load(){
       Term: ${p.term_days} days
       </p>
 
-      <input
-      id="amount-${p.id}"
-      type="number"
-      placeholder="Amount">
-
-      <button
+      <a
       class="btn"
-      onclick="invest(${p.id})">
-      Apply
-      </button>
+      href="/purchase.html?plan=${encodeURIComponent(p.id)}">
+      Buy package
+      </a>
 
       <div
       id="status-${p.id}"

@@ -1,0 +1,485 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+
+<title>TIMB3R — Buy Investment Package</title>
+
+<link rel="stylesheet" href="/styles.css">
+</head>
+
+<body>
+
+<nav class="main-nav">
+
+<div class="brand">TIMB3R</div>
+
+<div class="nav-links">
+<a href="/dashboard.html">Dashboard</a>
+<a href="/payment.html">Deposit</a>
+<a href="/withdraw.html">Withdraw</a>
+<a href="/transactions.html">Transactions</a>
+<a href="#" onclick="logout()">Logout</a>
+</div>
+
+</nav>
+
+
+<main class="container purchase-container">
+
+<a
+  href="/dashboard.html"
+  class="back-link">
+← Back to packages
+</a>
+
+<div class="purchase-layout">
+
+<section class="card">
+
+<div class="purchase-image">
+
+<img
+  id="planImage"
+  alt="Forestry investment package">
+
+</div>
+
+<h1 id="planName">
+Loading package...
+</h1>
+
+<p id="description" class="small"></p>
+
+<div class="package-facts">
+
+<div>
+<span>Minimum</span>
+<strong id="minimum">—</strong>
+</div>
+
+<div>
+<span>Maximum</span>
+<strong id="maximum">—</strong>
+</div>
+
+<div>
+<span>Term</span>
+<strong id="term">—</strong>
+</div>
+
+</div>
+
+</section>
+
+
+<section class="card">
+
+<h2>Purchase package</h2>
+
+<div class="purchase-balance">
+
+<span>Available balance</span>
+
+<strong id="balance">
+R0.00
+</strong>
+
+</div>
+
+<div id="status" class="status"></div>
+
+
+<form id="purchaseForm">
+
+<label>
+Investment amount
+
+<input
+id="amount"
+type="number"
+step="0.01"
+min="1"
+required>
+
+</label>
+
+<button
+id="purchaseBtn"
+class="btn"
+type="submit">
+
+Confirm investment
+
+</button>
+
+</form>
+
+
+<div class="fund-more">
+
+<p class="small">
+Need more funds?
+</p>
+
+<a
+class="btn secondary-btn"
+href="/payment.html">
+
+Deposit funds
+
+</a>
+
+</div>
+
+</section>
+
+</div>
+
+</main>
+
+
+<script>
+
+const token =
+  localStorage.getItem(
+    "timb3rToken"
+  );
+
+if (!token) {
+  location.href =
+    "/login.html";
+}
+
+
+const params =
+  new URLSearchParams(
+    location.search
+  );
+
+const planId =
+  params.get("plan");
+
+
+let selectedPlan =
+  null;
+
+
+function headers() {
+
+  return {
+    "Content-Type":
+      "application/json",
+
+    "Authorization":
+      "Bearer " + token
+  };
+
+}
+
+
+function logout() {
+
+  localStorage.removeItem(
+    "timb3rToken"
+  );
+
+  location.href =
+    "/login.html";
+
+}
+
+
+function money(value) {
+
+  return `R${Number(
+    value || 0
+  ).toFixed(2)}`;
+
+}
+
+
+function planImage(name) {
+
+  const images = {
+
+    "Starter Phase 1":
+      "https://commons.wikimedia.org/wiki/Special:Redirect/file/Pine%20forest%20in%20Sweden.jpg",
+
+    "Starter Phase 2":
+      "https://commons.wikimedia.org/wiki/Special:Redirect/file/Tree%20plantation%20-%20geograph.org.uk%20-%20400838.jpg",
+
+    "Starter Phase 3":
+      "https://commons.wikimedia.org/wiki/Special:Redirect/file/Tree%20planting%20Initiative%204.jpg",
+
+    "Starter Phase 4":
+      "https://commons.wikimedia.org/wiki/Special:Redirect/file/Hafren%20Forest%20-%20geograph.org.uk%20-%201113858.jpg",
+
+    "Starter Phase 5":
+      "https://commons.wikimedia.org/wiki/Special:Redirect/file/Forestry%20road%20and%20timber%2C%20Tywi%20Forest%2C%20Powys%20-%20geograph.org.uk%20-%201069273.jpg"
+
+  };
+
+  return images[name] ||
+    "https://commons.wikimedia.org/wiki/Special:Redirect/file/Pine%20forest%20in%20Sweden.jpg";
+
+}
+
+
+async function load() {
+
+  if (!planId) {
+
+    location.href =
+      "/dashboard.html";
+
+    return;
+
+  }
+
+
+  const [
+    plansResponse,
+    balanceResponse
+  ] = await Promise.all([
+
+    fetch(
+      "/api/plans",
+      {
+        headers:
+          headers()
+      }
+    ),
+
+    fetch(
+      "/api/dashboard",
+      {
+        headers:
+          headers()
+      }
+    )
+
+  ]);
+
+
+  if (
+    plansResponse.status === 401 ||
+    balanceResponse.status === 401
+  ) {
+
+    logout();
+
+    return;
+
+  }
+
+
+  const plans =
+    await plansResponse.json();
+
+  selectedPlan =
+    plans.find(
+      plan =>
+        String(plan.id) ===
+        String(planId)
+    );
+
+
+  if (!selectedPlan) {
+
+    document.getElementById(
+      "status"
+    ).textContent =
+      "This package is no longer available.";
+
+    return;
+
+  }
+
+
+  document.getElementById(
+    "planName"
+  ).textContent =
+    selectedPlan.name;
+
+
+  document.getElementById(
+    "description"
+  ).textContent =
+    selectedPlan.description || "";
+
+
+  document.getElementById(
+    "minimum"
+  ).textContent =
+    money(
+      selectedPlan.min_amount
+    );
+
+
+  document.getElementById(
+    "maximum"
+  ).textContent =
+    money(
+      selectedPlan.max_amount
+    );
+
+
+  document.getElementById(
+    "term"
+  ).textContent =
+    `${selectedPlan.term_days} days`;
+
+
+  document.getElementById(
+    "amount"
+  ).min =
+    selectedPlan.min_amount;
+
+
+  document.getElementById(
+    "amount"
+  ).max =
+    selectedPlan.max_amount;
+
+
+  document.getElementById(
+    "amount"
+  ).value =
+    selectedPlan.min_amount;
+
+
+  document.getElementById(
+    "planImage"
+  ).src =
+    planImage(
+      selectedPlan.name
+    );
+
+
+  const balances =
+    await balanceResponse.json();
+
+
+  document.getElementById(
+    "balance"
+  ).textContent =
+    money(
+      balances.available
+    );
+
+}
+
+
+document
+.getElementById(
+  "purchaseForm"
+)
+.addEventListener(
+  "submit",
+  async event => {
+
+    event.preventDefault();
+
+
+    const button =
+      document.getElementById(
+        "purchaseBtn"
+      );
+
+    const status =
+      document.getElementById(
+        "status"
+      );
+
+
+    button.disabled = true;
+
+    button.textContent =
+      "Processing...";
+
+
+    try {
+
+      const amount =
+        Number(
+          document.getElementById(
+            "amount"
+          ).value
+        );
+
+
+      const response =
+        await fetch(
+          "/api/investments",
+          {
+
+            method: "POST",
+
+            headers:
+              headers(),
+
+            body:
+              JSON.stringify({
+                planId:
+                  selectedPlan.id,
+                amount
+              })
+
+          }
+        );
+
+
+      const data =
+        await response.json();
+
+
+      if (!response.ok) {
+
+        throw new Error(
+          data.error ||
+          "Investment could not be created"
+        );
+
+      }
+
+
+      status.textContent =
+        "Investment purchased successfully.";
+
+
+      setTimeout(() => {
+
+        location.href =
+          "/dashboard.html";
+
+      }, 700);
+
+
+    } catch (error) {
+
+      status.textContent =
+        error.message;
+
+    } finally {
+
+      button.disabled =
+        false;
+
+      button.textContent =
+        "Confirm investment";
+
+    }
+
+  }
+);
+
+
+load();
+
+</script>
+
+</body>
+</html>
