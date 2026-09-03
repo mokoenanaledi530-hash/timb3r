@@ -85,7 +85,22 @@ async function load(){
     .innerHTML =
     plans.map(
       p => `
-      <div class="card">
+      <div class="card plan-card">
+
+      <div class="plan-image">
+        <svg viewBox="0 0 640 320" xmlns="http://www.w3.org/2000/svg">
+          <rect width="640" height="320" fill="#173f2d"/>
+          <circle cx="510" cy="72" r="42" fill="#d8b968"/>
+          <path d="M0 220 L95 135 L175 220 L270 115 L360 220 L450 125 L560 220 L640 145 L640 320 L0 320 Z" fill="#2f6b47"/>
+          <g fill="#8bc27c">
+            <path d="M70 235 l35-86 35 86h-22v54H92v-54z"/>
+            <path d="M165 245 l42-110 42 110h-26v55h-31v-55z"/>
+            <path d="M290 240 l38-98 38 98h-24v60h-29v-60z"/>
+            <path d="M410 245 l46-119 46 119h-28v55h-34v-55z"/>
+            <path d="M535 238 l35-91 35 91h-22v62h-27v-62z"/>
+          </g>
+        </svg>
+      </div>
 
       <h3>${p.name}</h3>
 

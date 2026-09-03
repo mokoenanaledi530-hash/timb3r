@@ -116,3 +116,37 @@ th,td{
   padding:10px;
   border-bottom:1px solid var(--border);
 }
+
+.plan-card{
+  overflow:hidden;
+  padding:0;
+}
+
+.plan-card h3,
+.plan-card p,
+.plan-card strong,
+.plan-card input,
+.plan-card button,
+.plan-card .status{
+  margin-left:20px;
+  margin-right:20px;
+}
+
+.plan-card .status{
+  margin-bottom:20px;
+}
+
+.plan-image{
+  width:100%;
+  height:180px;
+  overflow:hidden;
+  border-radius:18px 18px 0 0;
+  margin-bottom:18px;
+}
+
+.plan-image svg{
+  width:100%;
+  height:100%;
+  display:block;
+  object-fit:cover;
+}
