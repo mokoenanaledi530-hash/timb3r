@@ -24,6 +24,12 @@
 <h2>Pending EFT Payments</h2>
 <div id="payments">Loading...</div>
 
+<h2>Investments</h2>
+<div id="investments">Loading...</div>
+
+<h2>Withdrawal Requests</h2>
+<div id="withdrawals">Loading...</div>
+
 <h2>Transactions</h2>
 <div id="transactions">Loading...</div>
 
@@ -142,6 +148,336 @@ async function loadPayments() {
       : "<p>No EFT payments found.</p>";
 }
 
+
+async function loadInvestments() {
+
+  const investments =
+    await api(
+      "/api/admin/investments",
+      {
+        headers: headers()
+      }
+    );
+
+  document.getElementById(
+    "investments"
+  ).innerHTML =
+
+    investments.length
+
+    ? investments.map(i => `
+      <div class="card">
+
+        <strong>
+          ${esc(i.investor_name)}
+        </strong>
+
+        <p>
+          ${esc(i.investor_email)}
+        </p>
+
+        <p>
+          Package:
+          ${esc(i.plan_name)}
+        </p>
+
+        <p>
+          Principal:
+          ${money(i.principal)}
+        </p>
+
+        <p>
+          Daily return:
+          ${
+            i.daily_return_amount
+              ? money(
+                  i.daily_return_amount
+                ) + " / day"
+              : "-"
+          }
+        </p>
+
+        <p>
+          Status:
+          ${esc(i.status)}
+        </p>
+
+        <p>
+          Started:
+          ${
+            i.started_at
+              ? new Date(
+                  i.started_at
+                ).toLocaleString(
+                  "en-ZA"
+                )
+              : "-"
+          }
+        </p>
+
+        <p>
+          Maturity:
+          ${
+            i.maturity_at
+              ? new Date(
+                  i.maturity_at
+                ).toLocaleString(
+                  "en-ZA"
+                )
+              : "-"
+          }
+        </p>
+
+      </div>
+    `).join("")
+
+    : "<p>No investments found.</p>";
+}
+
+
+async function loadWithdrawals() {
+
+  const withdrawals =
+    await api(
+      "/api/admin/withdrawals",
+      {
+        headers: headers()
+      }
+    );
+
+  document.getElementById(
+    "withdrawals"
+  ).innerHTML =
+
+    withdrawals.length
+
+    ? withdrawals.map(w => `
+      <div class="card">
+
+        <strong>
+          ${esc(w.investor_name)}
+        </strong>
+
+        <p>
+          ${esc(w.investor_email)}
+        </p>
+
+        <p>
+          Amount:
+          ${money(w.amount)}
+        </p>
+
+        <p>
+          Reference:
+          ${esc(w.reference)}
+        </p>
+
+        <p>
+          Status:
+          ${esc(w.status)}
+        </p>
+
+        <hr>
+
+        <strong>
+          Payout bank
+        </strong>
+
+        <p>
+          Account holder:
+          ${esc(
+            w.account_holder || "-"
+          )}
+        </p>
+
+        <p>
+          Bank:
+          ${esc(
+            w.bank_name || "-"
+          )}
+        </p>
+
+        <p>
+          Account type:
+          ${esc(
+            w.account_type || "-"
+          )}
+        </p>
+
+        <p>
+          Account number:
+          ${esc(
+            w.account_number || "-"
+          )}
+        </p>
+
+        <p>
+          Branch code:
+          ${esc(
+            w.branch_code || "-"
+          )}
+        </p>
+
+        ${
+          w.status === "pending"
+          ? `
+            <button
+              onclick="approveWithdrawal(
+                '${w.reference}'
+              )">
+              Approve for payment
+            </button>
+
+            <button
+              onclick="rejectWithdrawal(
+                '${w.reference}'
+              )">
+              Reject
+            </button>
+          `
+          : ""
+        }
+
+        ${
+          w.status === "processing"
+          ? `
+            <button
+              onclick="markWithdrawalPaid(
+                '${w.reference}'
+              )">
+              Mark paid
+            </button>
+
+            <button
+              onclick="rejectWithdrawal(
+                '${w.reference}'
+              )">
+              Reject
+            </button>
+          `
+          : ""
+        }
+
+      </div>
+    `).join("")
+
+    : "<p>No withdrawal requests found.</p>";
+}
+
+
+async function approveWithdrawal(
+  reference
+) {
+
+  if (!confirm(
+    "Approve this withdrawal for EFT payment?"
+  )) {
+    return;
+  }
+
+  try {
+
+    const data = await api(
+      "/api/admin/withdrawals/" +
+      encodeURIComponent(reference) +
+      "/approve",
+      {
+        method: "POST",
+        headers: headers(true),
+        body: JSON.stringify({})
+      }
+    );
+
+    alert(
+      data.message ||
+      "Withdrawal approved"
+    );
+
+    await load();
+
+  } catch (err) {
+    alert(err.message);
+  }
+}
+
+
+async function rejectWithdrawal(
+  reference
+) {
+
+  const note = prompt(
+    "Reason for rejection:",
+    "Withdrawal rejected"
+  );
+
+  if (note === null) {
+    return;
+  }
+
+  try {
+
+    const data = await api(
+      "/api/admin/withdrawals/" +
+      encodeURIComponent(reference) +
+      "/reject",
+      {
+        method: "POST",
+        headers: headers(true),
+        body: JSON.stringify({
+          note
+        })
+      }
+    );
+
+    alert(
+      data.message ||
+      "Withdrawal rejected"
+    );
+
+    await load();
+
+  } catch (err) {
+    alert(err.message);
+  }
+}
+
+
+async function markWithdrawalPaid(
+  reference
+) {
+
+  if (!confirm(
+    "Only continue after the EFT has actually been sent. Mark this withdrawal as paid?"
+  )) {
+    return;
+  }
+
+  try {
+
+    const data = await api(
+      "/api/admin/withdrawals/" +
+      encodeURIComponent(reference) +
+      "/paid",
+      {
+        method: "POST",
+        headers: headers(true),
+        body: JSON.stringify({})
+      }
+    );
+
+    alert(
+      data.message ||
+      "Withdrawal marked paid"
+    );
+
+    await load();
+
+  } catch (err) {
+    alert(err.message);
+  }
+}
+
+
 async function loadTransactions() {
   const transactions = await api("/api/admin/transactions", {
     headers: headers()
@@ -220,6 +556,8 @@ async function load() {
     await Promise.all([
       loadUsers(),
       loadPayments(),
+      loadInvestments(),
+      loadWithdrawals(),
       loadTransactions()
     ]);
 

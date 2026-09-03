@@ -1361,6 +1361,409 @@ app.post(
 );
 
 
+
+/* =========================
+   ADMIN INVESTMENTS
+========================= */
+
+app.get(
+  "/api/admin/investments",
+  auth,
+  role("admin", "compliance"),
+  async (req, res) => {
+    try {
+      const result = await pool.query(`
+        SELECT
+          i.id,
+          i.principal,
+          i.status,
+          i.started_at,
+          i.maturity_at,
+          i.created_at,
+          u.name AS investor_name,
+          u.email AS investor_email,
+          p.name AS plan_name,
+          p.daily_return_amount,
+          p.term_days
+        FROM investments i
+        JOIN users u
+          ON u.id=i.user_id
+        JOIN investment_plans p
+          ON p.id=i.plan_id
+        ORDER BY i.created_at DESC
+        LIMIT 500
+      `);
+
+      res.json(result.rows);
+
+    } catch (err) {
+      console.error(
+        "ADMIN INVESTMENTS ERROR:",
+        err
+      );
+
+      res.status(500).json({
+        error:
+          "Unable to load investments"
+      });
+    }
+  }
+);
+
+
+/* =========================
+   ADMIN WITHDRAWALS
+========================= */
+
+app.get(
+  "/api/admin/withdrawals",
+  auth,
+  role("admin"),
+  async (req, res) => {
+
+    const bankDataKey =
+      process.env.BANK_DATA_KEY;
+
+    if (!bankDataKey) {
+      return res.status(503).json({
+        error:
+          "Bank data encryption is not configured"
+      });
+    }
+
+    try {
+
+      const result = await pool.query(
+        `
+        SELECT
+          t.reference,
+          t.user_id,
+          t.amount,
+          t.currency,
+          t.status,
+          t.created_at,
+          t.completed_at,
+
+          u.name AS investor_name,
+          u.email AS investor_email,
+
+          pa.account_holder,
+          pa.bank_name,
+          pa.account_type,
+          pa.branch_code,
+          pa.account_last4,
+
+          pgp_sym_decrypt(
+            pa.account_number_encrypted,
+            $1
+          ) AS account_number
+
+        FROM transactions t
+
+        JOIN users u
+          ON u.id=t.user_id
+
+        LEFT JOIN payout_accounts pa
+          ON pa.user_id=t.user_id
+
+        WHERE t.type='withdrawal'
+
+        ORDER BY
+          CASE
+            WHEN t.status='pending'
+              THEN 1
+            WHEN t.status='processing'
+              THEN 2
+            ELSE 3
+          END,
+          t.created_at DESC
+
+        LIMIT 500
+        `,
+        [bankDataKey]
+      );
+
+      res.json(result.rows);
+
+    } catch (err) {
+
+      console.error(
+        "ADMIN WITHDRAWALS ERROR:",
+        err
+      );
+
+      res.status(500).json({
+        error:
+          "Unable to load withdrawals"
+      });
+    }
+  }
+);
+
+
+app.post(
+  "/api/admin/withdrawals/:reference/approve",
+  auth,
+  role("admin"),
+  async (req, res) => {
+
+    const client =
+      await pool.connect();
+
+    try {
+
+      await client.query("BEGIN");
+
+      const result =
+        await client.query(
+          `
+          UPDATE transactions
+          SET status='processing'
+          WHERE reference=$1
+            AND type='withdrawal'
+            AND status='pending'
+          RETURNING
+            reference,
+            user_id,
+            amount,
+            status
+          `,
+          [req.params.reference]
+        );
+
+      if (!result.rowCount) {
+
+        await client.query("ROLLBACK");
+
+        return res.status(409).json({
+          error:
+            "Withdrawal is not pending"
+        });
+      }
+
+      await client.query("COMMIT");
+
+      await audit(
+        req.user.id,
+        "WITHDRAWAL_APPROVED_FOR_PAYMENT",
+        "transaction",
+        null,
+        {
+          reference:
+            result.rows[0].reference,
+          amount:
+            result.rows[0].amount
+        }
+      );
+
+      res.json({
+        message:
+          "Withdrawal approved for payment",
+        withdrawal:
+          result.rows[0]
+      });
+
+    } catch (err) {
+
+      try {
+        await client.query("ROLLBACK");
+      } catch (_) {}
+
+      console.error(
+        "WITHDRAWAL APPROVE ERROR:",
+        err
+      );
+
+      res.status(500).json({
+        error:
+          "Unable to approve withdrawal"
+      });
+
+    } finally {
+      client.release();
+    }
+  }
+);
+
+
+app.post(
+  "/api/admin/withdrawals/:reference/reject",
+  auth,
+  role("admin"),
+  async (req, res) => {
+
+    const client =
+      await pool.connect();
+
+    try {
+
+      await client.query("BEGIN");
+
+      const result =
+        await client.query(
+          `
+          UPDATE transactions
+          SET status='failed'
+          WHERE reference=$1
+            AND type='withdrawal'
+            AND status IN (
+              'pending',
+              'processing'
+            )
+          RETURNING
+            reference,
+            user_id,
+            amount,
+            status
+          `,
+          [req.params.reference]
+        );
+
+      if (!result.rowCount) {
+
+        await client.query("ROLLBACK");
+
+        return res.status(409).json({
+          error:
+            "Withdrawal cannot be rejected"
+        });
+      }
+
+      await client.query("COMMIT");
+
+      await audit(
+        req.user.id,
+        "WITHDRAWAL_REJECTED",
+        "transaction",
+        null,
+        {
+          reference:
+            result.rows[0].reference,
+          amount:
+            result.rows[0].amount,
+          note:
+            req.body.note || null
+        }
+      );
+
+      res.json({
+        message:
+          "Withdrawal rejected",
+        withdrawal:
+          result.rows[0]
+      });
+
+    } catch (err) {
+
+      try {
+        await client.query("ROLLBACK");
+      } catch (_) {}
+
+      console.error(
+        "WITHDRAWAL REJECT ERROR:",
+        err
+      );
+
+      res.status(500).json({
+        error:
+          "Unable to reject withdrawal"
+      });
+
+    } finally {
+      client.release();
+    }
+  }
+);
+
+
+app.post(
+  "/api/admin/withdrawals/:reference/paid",
+  auth,
+  role("admin"),
+  async (req, res) => {
+
+    const client =
+      await pool.connect();
+
+    try {
+
+      await client.query("BEGIN");
+
+      const result =
+        await client.query(
+          `
+          UPDATE transactions
+          SET
+            status='completed',
+            completed_at=now()
+          WHERE reference=$1
+            AND type='withdrawal'
+            AND status='processing'
+          RETURNING
+            reference,
+            user_id,
+            amount,
+            status,
+            completed_at
+          `,
+          [req.params.reference]
+        );
+
+      if (!result.rowCount) {
+
+        await client.query("ROLLBACK");
+
+        return res.status(409).json({
+          error:
+            "Approve the withdrawal before marking it paid"
+        });
+      }
+
+      await client.query("COMMIT");
+
+      await audit(
+        req.user.id,
+        "WITHDRAWAL_PAID",
+        "transaction",
+        null,
+        {
+          reference:
+            result.rows[0].reference,
+          amount:
+            result.rows[0].amount
+        }
+      );
+
+      res.json({
+        message:
+          "Withdrawal marked as paid",
+        withdrawal:
+          result.rows[0]
+      });
+
+    } catch (err) {
+
+      try {
+        await client.query("ROLLBACK");
+      } catch (_) {}
+
+      console.error(
+        "WITHDRAWAL PAID ERROR:",
+        err
+      );
+
+      res.status(500).json({
+        error:
+          "Unable to mark withdrawal paid"
+      });
+
+    } finally {
+      client.release();
+    }
+  }
+);
+
+
 /* =========================
    ADMIN USERS
 ========================= */
