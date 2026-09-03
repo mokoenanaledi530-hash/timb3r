@@ -325,3 +325,14 @@ th,td{
 
 }
 
+
+select{
+  width:100%;
+  padding:13px;
+  border-radius:10px;
+  margin:7px 0 15px;
+  border:1px solid var(--border);
+  background:#091911;
+  color:white;
+  font-size:16px;
+}

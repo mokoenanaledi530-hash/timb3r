@@ -1,0 +1,381 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+<meta charset="utf-8">
+<meta name="viewport"
+content="width=device-width,initial-scale=1">
+
+<title>TIMB3R — Payout Bank Details</title>
+
+<link rel="stylesheet"
+href="/styles.css">
+</head>
+
+<body>
+
+<nav class="main-nav">
+
+<div class="brand">TIMB3R</div>
+
+<div class="nav-links">
+<a href="/dashboard.html">Dashboard</a>
+<a href="/payment.html">Deposit</a>
+<a href="/withdraw.html">Withdraw</a>
+<a href="/bank-details.html">Bank Details</a>
+<a href="/transactions.html">Transactions</a>
+<a href="#" onclick="logout()">Logout</a>
+</div>
+
+</nav>
+
+<main class="container">
+
+<div class="form-wrap">
+
+<h1>Payout bank details</h1>
+
+<p class="small">
+Add the South African bank account where approved
+withdrawals and available returns should be paid.
+</p>
+
+<div id="savedAccount"
+class="card"
+style="display:none;margin-bottom:20px">
+
+<div class="small">
+Current payout account
+</div>
+
+<strong id="savedBank"></strong>
+
+<div id="savedNumber"
+class="small">
+</div>
+
+</div>
+
+<div id="status"
+class="status">
+</div>
+
+<form id="bankForm">
+
+<label>
+Account holder
+
+<input
+id="accountHolder"
+type="text"
+required>
+</label>
+
+<label>
+Bank
+
+<select
+id="bankName"
+required>
+
+<option value="">
+Select bank
+</option>
+
+<option>ABSA</option>
+<option>African Bank</option>
+<option>Capitec</option>
+<option>Discovery Bank</option>
+<option>FNB</option>
+<option>Nedbank</option>
+<option>Standard Bank</option>
+<option>TymeBank</option>
+<option>Other</option>
+
+</select>
+</label>
+
+<label>
+Account type
+
+<select
+id="accountType"
+required>
+
+<option value="">
+Select account type
+</option>
+
+<option value="Cheque">
+Cheque / Current
+</option>
+
+<option value="Savings">
+Savings
+</option>
+
+<option value="Transmission">
+Transmission
+</option>
+
+</select>
+</label>
+
+<label>
+Branch code
+
+<input
+id="branchCode"
+type="text"
+inputmode="numeric"
+required>
+</label>
+
+<label>
+Account number
+
+<input
+id="accountNumber"
+type="password"
+inputmode="numeric"
+autocomplete="off"
+placeholder="Enter account number"
+required>
+</label>
+
+<p class="small">
+For security, the full account number will not
+be displayed again after saving.
+</p>
+
+<button
+id="saveBtn"
+class="btn"
+type="submit">
+
+Save payout bank details
+
+</button>
+
+</form>
+
+</div>
+
+</main>
+
+<script>
+
+const token =
+  localStorage.getItem(
+    "timb3rToken"
+  );
+
+if (!token) {
+  location.href =
+    "/login.html";
+}
+
+
+function logout() {
+
+  localStorage.removeItem(
+    "timb3rToken"
+  );
+
+  location.href =
+    "/login.html";
+
+}
+
+
+function headers() {
+
+  return {
+    "Content-Type":
+      "application/json",
+
+    "Authorization":
+      "Bearer " + token
+  };
+
+}
+
+
+async function loadBankDetails() {
+
+  const response =
+    await fetch(
+      "/api/payout-account",
+      {
+        headers:
+          headers()
+      }
+    );
+
+  if (response.status === 401) {
+    logout();
+    return;
+  }
+
+  const data =
+    await response.json();
+
+  if (
+    response.ok &&
+    data.configured
+  ) {
+
+    document.getElementById(
+      "savedAccount"
+    ).style.display =
+      "block";
+
+    document.getElementById(
+      "savedBank"
+    ).textContent =
+      data.bank_name;
+
+    document.getElementById(
+      "savedNumber"
+    ).textContent =
+      data.account_number;
+
+    document.getElementById(
+      "accountHolder"
+    ).value =
+      data.account_holder || "";
+
+    document.getElementById(
+      "bankName"
+    ).value =
+      data.bank_name || "";
+
+    document.getElementById(
+      "accountType"
+    ).value =
+      data.account_type || "";
+
+    document.getElementById(
+      "branchCode"
+    ).value =
+      data.branch_code || "";
+
+  }
+
+}
+
+
+document
+.getElementById(
+  "bankForm"
+)
+.addEventListener(
+  "submit",
+  async event => {
+
+    event.preventDefault();
+
+    const button =
+      document.getElementById(
+        "saveBtn"
+      );
+
+    const status =
+      document.getElementById(
+        "status"
+      );
+
+    button.disabled = true;
+
+    button.textContent =
+      "Saving...";
+
+    try {
+
+      const response =
+        await fetch(
+          "/api/payout-account",
+          {
+
+            method:
+              "PUT",
+
+            headers:
+              headers(),
+
+            body:
+              JSON.stringify({
+
+                accountHolder:
+                  document.getElementById(
+                    "accountHolder"
+                  ).value,
+
+                bankName:
+                  document.getElementById(
+                    "bankName"
+                  ).value,
+
+                accountType:
+                  document.getElementById(
+                    "accountType"
+                  ).value,
+
+                branchCode:
+                  document.getElementById(
+                    "branchCode"
+                  ).value,
+
+                accountNumber:
+                  document.getElementById(
+                    "accountNumber"
+                  ).value
+
+              })
+          }
+        );
+
+      const data =
+        await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.error ||
+          "Unable to save bank details"
+        );
+      }
+
+      status.textContent =
+        "Payout bank details saved securely.";
+
+      document.getElementById(
+        "accountNumber"
+      ).value = "";
+
+      await loadBankDetails();
+
+    } catch (error) {
+
+      status.textContent =
+        error.message;
+
+    } finally {
+
+      button.disabled =
+        false;
+
+      button.textContent =
+        "Save payout bank details";
+
+    }
+
+  }
+);
+
+
+loadBankDetails();
+
+</script>
+
+</body>
+</html>

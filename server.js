@@ -604,6 +604,204 @@ app.get(
 );
 
 
+
+/* =========================
+   PAYOUT BANK ACCOUNT
+========================= */
+
+app.get(
+  "/api/payout-account",
+  auth,
+  async (req, res) => {
+    try {
+      const result = await pool.query(
+        `SELECT
+           account_holder,
+           bank_name,
+           account_type,
+           branch_code,
+           account_last4,
+           updated_at
+         FROM payout_accounts
+         WHERE user_id=$1`,
+        [req.user.id]
+      );
+
+      if (!result.rowCount) {
+        return res.json({
+          configured: false
+        });
+      }
+
+      res.json({
+        configured: true,
+        ...result.rows[0],
+        account_number:
+          "•••• " + result.rows[0].account_last4
+      });
+
+    } catch (err) {
+      console.error(
+        "PAYOUT ACCOUNT GET ERROR:",
+        err
+      );
+
+      res.status(500).json({
+        error:
+          "Unable to load payout bank details"
+      });
+    }
+  }
+);
+
+
+app.put(
+  "/api/payout-account",
+  auth,
+  async (req, res) => {
+
+    const bankDataKey =
+      process.env.BANK_DATA_KEY;
+
+    if (!bankDataKey) {
+      return res.status(503).json({
+        error:
+          "Bank data encryption is not configured"
+      });
+    }
+
+    const {
+      accountHolder,
+      bankName,
+      accountType,
+      branchCode,
+      accountNumber
+    } = req.body;
+
+    const cleanAccount =
+      String(accountNumber || "")
+        .replace(/\s+/g, "");
+
+    if (
+      !accountHolder ||
+      !bankName ||
+      !accountType ||
+      !branchCode ||
+      !/^[0-9]{5,20}$/.test(cleanAccount)
+    ) {
+      return res.status(400).json({
+        error:
+          "Complete all bank details with a valid account number"
+      });
+    }
+
+    try {
+
+      const userResult =
+        await pool.query(
+          `SELECT kyc_status
+           FROM users
+           WHERE id=$1`,
+          [req.user.id]
+        );
+
+      if (
+        !userResult.rowCount ||
+        userResult.rows[0].kyc_status
+          !== "verified"
+      ) {
+        return res.status(403).json({
+          error:
+            "KYC verification is required before saving payout bank details"
+        });
+      }
+
+      const last4 =
+        cleanAccount.slice(-4);
+
+      await pool.query(
+        `
+        INSERT INTO payout_accounts
+        (
+          user_id,
+          account_holder,
+          bank_name,
+          account_type,
+          branch_code,
+          account_number_encrypted,
+          account_last4,
+          updated_at
+        )
+        VALUES
+        (
+          $1,$2,$3,$4,$5,
+          pgp_sym_encrypt($6,$7),
+          $8,
+          now()
+        )
+        ON CONFLICT(user_id)
+        DO UPDATE SET
+          account_holder=
+            EXCLUDED.account_holder,
+          bank_name=
+            EXCLUDED.bank_name,
+          account_type=
+            EXCLUDED.account_type,
+          branch_code=
+            EXCLUDED.branch_code,
+          account_number_encrypted=
+            EXCLUDED.account_number_encrypted,
+          account_last4=
+            EXCLUDED.account_last4,
+          updated_at=now()
+        `,
+        [
+          req.user.id,
+          accountHolder.trim(),
+          bankName.trim(),
+          accountType.trim(),
+          branchCode.trim(),
+          cleanAccount,
+          bankDataKey,
+          last4
+        ]
+      );
+
+      await audit(
+        req.user.id,
+        "PAYOUT_ACCOUNT_UPDATED",
+        "user",
+        req.user.id,
+        {
+          bankName:
+            bankName.trim(),
+          accountLast4:
+            last4
+        }
+      );
+
+      res.json({
+        success: true,
+        account_number:
+          "•••• " + last4
+      });
+
+    } catch (err) {
+
+      console.error(
+        "PAYOUT ACCOUNT UPDATE ERROR:",
+        err
+      );
+
+      res.status(500).json({
+        error:
+          "Unable to save payout bank details"
+      });
+    }
+  }
+);
+
+
 /* =========================
    WITHDRAWAL REQUESTS
 ========================= */
@@ -899,6 +1097,23 @@ app.post(
       await client.query(
         "BEGIN"
       );
+
+      const payoutAccount =
+        await client.query(
+          `SELECT id
+           FROM payout_accounts
+           WHERE user_id=$1`,
+          [req.user.id]
+        );
+
+      if (!payoutAccount.rowCount) {
+        await client.query("ROLLBACK");
+
+        return res.status(400).json({
+          error:
+            "Add your payout bank details before requesting a withdrawal"
+        });
+      }
 
       const planResult =
         await client.query(
