@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TIMB3R — Withdraw</title>
+<link rel="stylesheet" href="/styles.css">
+</head>
+
+<body>
+
+<nav class="main-nav">
+  <div class="brand">TIMB3R</div>
+
+  <div class="nav-links">
+    <a href="/dashboard.html">Dashboard</a>
+    <a href="/payment.html">Deposit</a>
+    <a href="/withdraw.html">Withdraw</a>
+    <a href="/transactions.html">Transactions</a>
+    <a href="#" onclick="logout()">Logout</a>
+  </div>
+</nav>
+
+<main class="container">
+
+<div class="form-wrap">
+
+<h1>Withdraw funds</h1>
+
+<p class="small">
+Withdrawal requests are reviewed before payment.
+Only cleared, available funds can be withdrawn.
+</p>
+
+<div class="card" style="margin-bottom:20px">
+  <div class="small">Available balance</div>
+  <h2 id="available">Loading...</h2>
+</div>
+
+<div id="status" class="status"></div>
+
+<form id="withdrawForm">
+
+<label>
+Amount (ZAR)
+<input
+  id="amount"
+  type="number"
+  min="1"
+  step="0.01"
+  placeholder="500.00"
+  required>
+</label>
+
+<button
+  id="submitBtn"
+  class="btn"
+  type="submit">
+Request withdrawal
+</button>
+
+</form>
+
+</div>
+
+</main>
+
+<script>
+
+const token =
+  localStorage.getItem("timb3rToken");
+
+if (!token) {
+  location.href = "/login.html";
+}
+
+function headers() {
+  return {
+    "Content-Type": "application/json",
+    "Authorization": "Bearer " + token
+  };
+}
+
+function logout() {
+  localStorage.removeItem("timb3rToken");
+  location.href = "/login.html";
+}
+
+async function loadBalance() {
+
+  const response =
+    await fetch(
+      "/api/dashboard",
+      { headers: headers() }
+    );
+
+  if (response.status === 401) {
+    logout();
+    return;
+  }
+
+  const data =
+    await response.json();
+
+  document
+    .getElementById("available")
+    .textContent =
+      `R${Number(data.available || 0).toFixed(2)}`;
+}
+
+document
+  .getElementById("withdrawForm")
+  .addEventListener(
+    "submit",
+    async event => {
+
+      event.preventDefault();
+
+      const button =
+        document.getElementById("submitBtn");
+
+      const status =
+        document.getElementById("status");
+
+      button.disabled = true;
+      button.textContent =
+        "Submitting...";
+
+      try {
+
+        const response =
+          await fetch(
+            "/api/withdrawals",
+            {
+              method: "POST",
+              headers: headers(),
+              body: JSON.stringify({
+                amount:
+                  Number(
+                    document
+                      .getElementById("amount")
+                      .value
+                  )
+              })
+            }
+          );
+
+        const data =
+          await response.json();
+
+        status.textContent =
+          response.ok
+            ? "Withdrawal request submitted for review."
+            : data.error ||
+              "Withdrawal request failed";
+
+        if (response.ok) {
+          document
+            .getElementById("withdrawForm")
+            .reset();
+
+          loadBalance();
+        }
+
+      } catch (error) {
+
+        status.textContent =
+          "Unable to submit withdrawal request.";
+
+      } finally {
+
+        button.disabled = false;
+        button.textContent =
+          "Request withdrawal";
+      }
+    }
+  );
+
+loadBalance();
+
+</script>
+
+</body>
+</html>

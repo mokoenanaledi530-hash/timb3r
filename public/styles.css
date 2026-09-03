@@ -189,3 +189,17 @@ th,td{
     width:100%;
   }
 }
+
+.transaction-card{
+  display:grid;
+  grid-template-columns:1.4fr .7fr auto;
+  align-items:center;
+  gap:16px;
+  margin-bottom:12px;
+}
+
+@media(max-width:650px){
+  .transaction-card{
+    grid-template-columns:1fr;
+  }
+}

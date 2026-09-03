@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TIMB3R — Transactions</title>
+<link rel="stylesheet" href="/styles.css">
+</head>
+
+<body>
+
+<nav class="main-nav">
+  <div class="brand">TIMB3R</div>
+
+  <div class="nav-links">
+    <a href="/dashboard.html">Dashboard</a>
+    <a href="/payment.html">Deposit</a>
+    <a href="/withdraw.html">Withdraw</a>
+    <a href="/transactions.html">Transactions</a>
+    <a href="#" onclick="logout()">Logout</a>
+  </div>
+</nav>
+
+<main class="container">
+
+<h1>Transaction history</h1>
+
+<p class="small">
+Deposits, investments, returns and withdrawal requests.
+</p>
+
+<div id="transactions">
+  Loading...
+</div>
+
+</main>
+
+<script>
+
+const token =
+  localStorage.getItem("timb3rToken");
+
+if (!token) {
+  location.href = "/login.html";
+}
+
+function logout() {
+  localStorage.removeItem("timb3rToken");
+  location.href = "/login.html";
+}
+
+function money(value) {
+  return `R${Number(value).toFixed(2)}`;
+}
+
+async function loadTransactions() {
+
+  const response =
+    await fetch(
+      "/api/transactions",
+      {
+        headers: {
+          Authorization:
+            `Bearer ${token}`
+        }
+      }
+    );
+
+  if (response.status === 401) {
+    logout();
+    return;
+  }
+
+  const rows =
+    await response.json();
+
+  const target =
+    document.getElementById(
+      "transactions"
+    );
+
+  if (!response.ok) {
+    target.textContent =
+      rows.error ||
+      "Unable to load transactions";
+    return;
+  }
+
+  if (!rows.length) {
+    target.innerHTML =
+      '<div class="card">No transactions yet.</div>';
+    return;
+  }
+
+  target.innerHTML =
+    rows.map(row => `
+      <div class="card transaction-card">
+        <div>
+          <strong>
+            ${String(row.type).toUpperCase()}
+          </strong>
+
+          <div class="small">
+            ${row.reference}
+          </div>
+        </div>
+
+        <div>
+          <strong>
+            ${money(row.amount)}
+          </strong>
+
+          <div class="small">
+            ${row.status}
+          </div>
+        </div>
+
+        <div class="small">
+          ${new Date(
+            row.created_at
+          ).toLocaleString()}
+        </div>
+      </div>
+    `).join("");
+}
+
+loadTransactions();
+
+</script>
+
+</body>
+</html>

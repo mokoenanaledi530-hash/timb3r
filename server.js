@@ -605,6 +605,166 @@ app.get(
 
 
 /* =========================
+   WITHDRAWAL REQUESTS
+========================= */
+
+app.post(
+  "/api/withdrawals",
+  auth,
+  async (req, res) => {
+    const amount = Number(req.body.amount);
+
+    if (!Number.isFinite(amount) || amount <= 0) {
+      return res.status(400).json({
+        error: "Enter a valid withdrawal amount"
+      });
+    }
+
+    const client = await pool.connect();
+
+    try {
+      await client.query("BEGIN");
+
+      const userResult = await client.query(
+        `SELECT id, kyc_status
+         FROM users
+         WHERE id=$1
+         FOR UPDATE`,
+        [req.user.id]
+      );
+
+      if (!userResult.rowCount) {
+        throw new Error("User not found");
+      }
+
+      if (userResult.rows[0].kyc_status !== "verified") {
+        await client.query("ROLLBACK");
+
+        return res.status(403).json({
+          error: "KYC verification is required before withdrawal"
+        });
+      }
+
+      const balanceResult = await client.query(
+        `
+        SELECT
+          COALESCE(
+            SUM(
+              CASE
+                WHEN type='deposit'
+                  AND status='completed'
+                  THEN amount
+
+                WHEN type='return'
+                  AND status='completed'
+                  THEN amount
+
+                WHEN type='refund'
+                  AND status='completed'
+                  THEN amount
+
+                WHEN type='withdrawal'
+                  AND status='completed'
+                  THEN -amount
+
+                WHEN type='withdrawal'
+                  AND status IN ('pending','processing')
+                  THEN -amount
+
+                WHEN type='investment'
+                  AND status='completed'
+                  THEN -amount
+
+                ELSE 0
+              END
+            ),
+            0
+          ) AS available
+        FROM transactions
+        WHERE user_id=$1
+        `,
+        [req.user.id]
+      );
+
+      const available =
+        Number(balanceResult.rows[0].available);
+
+      if (amount > available) {
+        await client.query("ROLLBACK");
+
+        return res.status(400).json({
+          error: "Insufficient available balance"
+        });
+      }
+
+      const reference = ref();
+
+      const result = await client.query(
+        `INSERT INTO transactions
+          (
+            user_id,
+            reference,
+            type,
+            amount,
+            currency,
+            status,
+            source
+          )
+         VALUES
+          ($1,$2,'withdrawal',$3,'ZAR','pending','investor_request')
+         RETURNING
+          reference,
+          amount,
+          currency,
+          status,
+          created_at`,
+        [
+          req.user.id,
+          reference,
+          amount
+        ]
+      );
+
+      await client.query("COMMIT");
+
+      await audit(
+        req.user.id,
+        "WITHDRAWAL_REQUESTED",
+        "transaction",
+        null,
+        {
+          reference,
+          amount
+        }
+      );
+
+      return res.status(201).json({
+        message: "Withdrawal request submitted for review",
+        withdrawal: result.rows[0]
+      });
+
+    } catch (err) {
+      try {
+        await client.query("ROLLBACK");
+      } catch (_) {}
+
+      console.error(
+        "WITHDRAWAL ERROR:",
+        err
+      );
+
+      return res.status(500).json({
+        error: "Unable to submit withdrawal request"
+      });
+
+    } finally {
+      client.release();
+    }
+  }
+);
+
+
+/* =========================
    USER TRANSACTIONS
 ========================= */
 
