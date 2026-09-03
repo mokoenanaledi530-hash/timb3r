@@ -259,6 +259,31 @@ app.post(
           .toString("hex")
           .toUpperCase();
 
+      let referredBy = null;
+
+      if (referralCode) {
+        const referrer =
+          await pool.query(
+            `SELECT id
+             FROM users
+             WHERE referral_code=$1`,
+            [
+              String(referralCode)
+                .trim()
+                .toUpperCase()
+            ]
+          );
+
+        if (!referrer.rowCount) {
+          return res.status(400).json({
+            error: "Invalid referral link"
+          });
+        }
+
+        referredBy =
+          referrer.rows[0].id;
+      }
+
       const result =
         await pool.query(
           `INSERT INTO users
@@ -266,10 +291,11 @@ app.post(
               name,
               email,
               password_hash,
-              referral_code
+              referral_code,
+              referred_by
             )
            VALUES
-            ($1,$2,$3,$4)
+            ($1,$2,$3,$4,$5)
            RETURNING
             id,
             name,
@@ -283,7 +309,8 @@ app.post(
               .trim()
               .toLowerCase(),
             hash,
-            code
+            code,
+            referredBy
           ]
         );
 

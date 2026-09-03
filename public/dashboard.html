@@ -56,6 +56,24 @@ Loading...
   <a class="btn secondary-btn" href="/transactions.html">Transactions</a>
 </div>
 
+<div class="card">
+<h3>My referral link</h3>
+
+<p class="small">
+Share this link with people you refer.
+</p>
+
+<input
+id="referralLink"
+readonly>
+
+<button
+class="btn"
+onclick="copyReferralLink()">
+Copy referral link
+</button>
+</div>
+
 <h2>Investment packages</h2>
 
 <div
@@ -152,7 +170,14 @@ async function load(){
 
   document.getElementById("user")
     .textContent =
-    `${me.full_name} • KYC ${me.kyc_status}`;
+    `${me.name} • KYC ${me.kyc_status}`;
+
+  document.getElementById(
+    "referralLink"
+  ).value =
+    `${location.origin}/register.html?ref=${encodeURIComponent(
+      me.referral_code
+    )}`;
 
   const plansRes =
     await fetch(
@@ -289,6 +314,22 @@ async function loadInvestments(){
     : `<div class="card">
        No investment applications yet.
        </div>`;
+}
+
+async function copyReferralLink(){
+  const input =
+    document.getElementById(
+      "referralLink"
+    );
+
+  try {
+    await navigator.clipboard.writeText(
+      input.value
+    );
+  } catch (_) {
+    input.select();
+    document.execCommand("copy");
+  }
 }
 
 function logout(){

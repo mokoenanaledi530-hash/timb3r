@@ -44,6 +44,11 @@ class="status">
 </div>
 
 <script>
+const referralCode =
+  new URLSearchParams(
+    location.search
+  ).get("ref");
+
 async function register(){
 
   const response =
@@ -60,7 +65,9 @@ async function register(){
           email:
             document.getElementById("email").value,
           password:
-            document.getElementById("password").value
+            document.getElementById("password").value,
+          referralCode:
+            referralCode || null
         })
       }
     );
