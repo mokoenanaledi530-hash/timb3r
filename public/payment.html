@@ -202,8 +202,18 @@ Payment date
 >
 </label>
 
+<label>
+Payment proof link
+<input
+  id="proofUrl"
+  type="url"
+  placeholder="https://..."
+  required
+>
+</label>
+
 <button id="submitBtn" type="submit">
-Submit payment
+Submit EFT for verification
 </button>
 
 </form>
@@ -215,7 +225,7 @@ Submit payment
 
 <script>
 
-const token = localStorage.getItem("token");
+const token = localStorage.getItem("timb3rToken");
 
 if (!token) {
   window.location.href = "/";
@@ -309,7 +319,10 @@ document
               document.getElementById("senderBank").value,
 
             paymentDate:
-              document.getElementById("paymentDate").value
+              document.getElementById("paymentDate").value,
+
+            proofUrl:
+              document.getElementById("proofUrl").value.trim()
 
           })
         }
@@ -338,7 +351,7 @@ document
     } finally {
 
       button.disabled = false;
-      button.textContent = "Submit payment";
+      button.textContent = "Submit EFT for verification";
 
     }
 

@@ -9,9 +9,24 @@ const crypto = require("crypto");
 const app = express();
 const port = process.env.PORT || 3000;
 
+const isProduction =
+  process.env.NODE_ENV === "production";
+
 const secret =
   process.env.JWT_SECRET ||
-  "development-only-secret";
+  (isProduction
+    ? null
+    : "development-only-secret");
+
+if (!secret) {
+  throw new Error(
+    "JWT_SECRET must be configured in production"
+  );
+}
+
+const appMode =
+  process.env.APP_MODE ||
+  (isProduction ? "live" : "development");
 
 const pool = new Pool({
   connectionString:
@@ -186,9 +201,7 @@ app.get(
       version: "0.2.0",
       status: "ok",
       database,
-      mode:
-        process.env.APP_MODE ||
-        "demo"
+      mode: appMode
     });
   }
 );
@@ -674,95 +687,17 @@ app.get(
 
 
 /* =========================
-   DEMO DEPOSIT
+   VERIFIED DEPOSITS ONLY
 ========================= */
 
 app.post(
   "/api/deposits",
   auth,
   async (req, res) => {
-    const amount =
-      Number(req.body.amount);
-
-    if (
-      !Number.isFinite(amount) ||
-      amount <= 0
-    ) {
-      return res.status(400).json({
-        error:
-          "Invalid amount"
-      });
-    }
-
-    if (
-      (process.env.APP_MODE ||
-        "demo") !== "demo"
-    ) {
-      return res.status(501).json({
-        error:
-          "Live payment webhook integration is required"
-      });
-    }
-
-    try {
-      const reference =
-        ref();
-
-      await pool.query(
-        `INSERT INTO transactions
-          (
-            user_id,
-            reference,
-            type,
-            amount,
-            status,
-            source
-          )
-         VALUES
-          (
-            $1,
-            $2,
-            'deposit',
-            $3,
-            'completed',
-            'demo'
-          )`,
-        [
-          req.user.id,
-          reference,
-          amount
-        ]
-      );
-
-      await audit(
-        req.user.id,
-        "CREATE_DEMO_DEPOSIT",
-        "transaction",
-        null,
-        {
-          reference,
-          amount
-        }
-      );
-
-      res.status(201).json({
-        reference,
-        status:
-          "completed",
-        message:
-          "Demo only: no real funds moved."
-      });
-    } catch (err) {
-      console.error(
-        "DEMO DEPOSIT ERROR:",
-        err
-      );
-
-      res.status(500).json({
-        error:
-          "Unable to create demo deposit"
-      });
-    }
+    return res.status(410).json({
+      error:
+        "Direct deposits are disabled. Submit an EFT through /api/payments/bank for administrator verification."
+    });
   }
 );
 
@@ -1136,22 +1071,20 @@ app.get(
    PAYMENT WEBHOOK
 ========================= */
 
+/*
+  TIMB3R currently operates manual EFT verification.
+  This endpoint never credits investor balances.
+*/
+
 app.post(
   "/api/webhooks/payment",
   async (req, res) => {
-    if (
-      (process.env.APP_MODE ||
-        "demo") !== "live"
-    ) {
-      return res.status(202).json({
-        received: true,
-        mode: "demo"
-      });
-    }
-
-    return res.status(501).json({
-      error:
-        "Configure and verify the payment provider webhook before enabling live money movement."
+    return res.status(202).json({
+      received: true,
+      paymentMethod: "manual_eft",
+      automaticCredit: false,
+      message:
+        "EFT payments are credited only after administrator verification."
     });
   }
 );
@@ -1257,6 +1190,19 @@ app.post(
       const numericAmount =
         Number(amount);
 
+      const safeProofUrl =
+        String(proofUrl || "").trim();
+
+      if (
+        !safeProofUrl ||
+        !/^https?:\/\//i.test(safeProofUrl)
+      ) {
+        return res.status(400).json({
+          error:
+            "Payment proof link is required"
+        });
+      }
+
       if (
         !Number.isFinite(
           numericAmount
@@ -1331,8 +1277,7 @@ app.post(
               null,
             paymentDate ||
               null,
-            proofUrl ||
-              null
+            safeProofUrl
           ]
         );
 
@@ -1479,11 +1424,15 @@ app.post(
            currency,
            status
          FROM transactions
-         WHERE reference=$1
+         WHERE
+           reference=$1
+           OR provider_reference=$1
+           OR reference=$2
+           OR provider_reference=$2
          LIMIT 1`,
         [
-          "BANK-" +
-          payment.id.toString().replace(/-/g, "")
+          "BANK-" + payment.id.toString(),
+          "BANK-" + payment.id.toString()
         ]
       );
 
