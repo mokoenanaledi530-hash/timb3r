@@ -493,6 +493,8 @@ app.get(
              daily_return_amount
            FROM investment_plans
            WHERE status='active'
+             AND daily_return_amount IS NOT NULL
+             AND daily_return_amount > 0
            ORDER BY min_amount`
         );
 
@@ -819,6 +821,24 @@ app.post(
       });
     }
 
+    const saHour = Number(
+      new Intl.DateTimeFormat(
+        "en-GB",
+        {
+          timeZone: "Africa/Johannesburg",
+          hour: "2-digit",
+          hourCycle: "h23"
+        }
+      ).format(new Date())
+    );
+
+    if (saHour < 7 || saHour >= 15) {
+      return res.status(403).json({
+        error:
+          "Withdrawals are open daily from 07:00 to 15:00 South Africa time"
+      });
+    }
+
     const client = await pool.connect();
 
     try {
@@ -841,6 +861,22 @@ app.post(
 
         return res.status(403).json({
           error: "KYC verification is required before withdrawal"
+        });
+      }
+
+      const payoutAccount = await client.query(
+        `SELECT id
+         FROM payout_accounts
+         WHERE user_id=$1`,
+        [req.user.id]
+      );
+
+      if (!payoutAccount.rowCount) {
+        await client.query("ROLLBACK");
+
+        return res.status(400).json({
+          error:
+            "Add your payout bank details before requesting a withdrawal"
         });
       }
 
@@ -1099,29 +1135,14 @@ app.post(
         "BEGIN"
       );
 
-      const payoutAccount =
-        await client.query(
-          `SELECT id
-           FROM payout_accounts
-           WHERE user_id=$1`,
-          [req.user.id]
-        );
-
-      if (!payoutAccount.rowCount) {
-        await client.query("ROLLBACK");
-
-        return res.status(400).json({
-          error:
-            "Add your payout bank details before requesting a withdrawal"
-        });
-      }
-
       const planResult =
         await client.query(
           `SELECT *
            FROM investment_plans
            WHERE id=$1
              AND status='active'
+             AND daily_return_amount IS NOT NULL
+             AND daily_return_amount > 0
            FOR SHARE`,
           [planId]
         );

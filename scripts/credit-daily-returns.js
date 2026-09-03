@@ -6,10 +6,7 @@ if (!process.env.DATABASE_URL) {
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl:
-    process.env.NODE_ENV === "production"
-      ? { rejectUnauthorized: false }
-      : undefined
+  ssl: { rejectUnauthorized: false }
 });
 
 async function run() {
@@ -27,16 +24,22 @@ async function run() {
           (
             now() AT TIME ZONE 'Africa/Johannesburg'
           )::date AS accrual_date
-
         FROM investments i
-
         JOIN investment_plans p
-          ON p.id = i.plan_id
-
-        WHERE
-          i.status = 'active'
+          ON p.id=i.plan_id
+        WHERE i.status='active'
           AND i.started_at IS NOT NULL
-          AND i.started_at <= now()
+
+          -- first payment only from the next SA calendar day
+          AND (
+            i.started_at
+            AT TIME ZONE 'Africa/Johannesburg'
+          )::date
+          <
+          (
+            now()
+            AT TIME ZONE 'Africa/Johannesburg'
+          )::date
 
           AND (
             i.maturity_at IS NULL
@@ -55,13 +58,11 @@ async function run() {
           accrual_date,
           amount
         )
-
         SELECT
           investment_id,
           user_id,
           accrual_date,
           amount
-
         FROM eligible
 
         ON CONFLICT (
@@ -90,25 +91,17 @@ async function run() {
           provider_reference,
           completed_at
         )
-
         SELECT
           user_id,
 
           'RET-' ||
           substring(
-            replace(
-              investment_id::text,
-              '-',
-              ''
-            ),
+            replace(investment_id::text,'-',''),
             1,
             12
           ) ||
           '-' ||
-          to_char(
-            accrual_date,
-            'YYYYMMDD'
-          ),
+          to_char(accrual_date,'YYYYMMDD'),
 
           'return',
           amount,
@@ -127,22 +120,17 @@ async function run() {
 
         RETURNING
           id,
-          provider_reference,
-          amount
+          provider_reference
       )
 
       UPDATE investment_return_accruals a
-
-      SET transaction_id = t.id
-
+      SET transaction_id=t.id
       FROM new_transactions t
-
-      WHERE
-        t.provider_reference =
-          'daily_return:' ||
-          a.investment_id::text ||
-          ':' ||
-          a.accrual_date::text
+      WHERE t.provider_reference =
+        'daily_return:' ||
+        a.investment_id::text ||
+        ':' ||
+        a.accrual_date::text
 
       RETURNING
         a.investment_id,
@@ -153,26 +141,20 @@ async function run() {
     await client.query("COMMIT");
 
     console.log(
-      `Daily return credits completed: ${result.rowCount}`
+      "DAILY RETURN CREDITS:",
+      result.rowCount
     );
 
-    console.table(result.rows);
-
-  } catch (error) {
-
+  } catch (err) {
     await client.query("ROLLBACK");
-    throw error;
-
+    throw err;
   } finally {
-
     client.release();
     await pool.end();
-
   }
 }
 
-run().catch(error => {
-  console.error("DAILY RETURN ERROR");
-  console.error(error);
+run().catch(err => {
+  console.error(err);
   process.exit(1);
 });
