@@ -489,7 +489,8 @@ app.get(
              description,
              min_amount,
              max_amount,
-             term_days
+             term_days,
+             daily_return_amount
            FROM investment_plans
            WHERE status='active'
            ORDER BY min_amount`
