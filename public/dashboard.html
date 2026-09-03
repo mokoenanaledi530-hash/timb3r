@@ -196,6 +196,17 @@ async function load(){
       Term: ${p.term_days} days
       </p>
 
+      <p class="daily-return">
+      Daily return:
+      <strong>
+      ${
+        p.daily_return_amount
+          ? `R${Number(p.daily_return_amount).toFixed(2)} / day`
+          : "Not set"
+      }
+      </strong>
+      </p>
+
       <a
       class="btn"
       href="/purchase.html?plan=${encodeURIComponent(p.id)}">
