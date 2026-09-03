@@ -7,6 +7,12 @@ const path = require("path");
 const crypto = require("crypto");
 
 const app = express();
+
+/*
+ * TIMB3R does not use nested query-string objects.
+ * Use Node's simple parser instead of the extended qs parser.
+ */
+app.set("query parser", "simple");
 const port = process.env.PORT || 3000;
 
 const isProduction =
