@@ -2,8 +2,7 @@
 <html>
 <head>
 <meta charset="utf-8">
-<meta name="viewport"
-content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>TIMB3R Admin</title>
 <link rel="stylesheet" href="/styles.css">
 </head>
@@ -11,121 +10,232 @@ content="width=device-width,initial-scale=1">
 <body>
 
 <nav>
-<div class="brand">
-TIMB3R ADMIN
-</div>
-
-<a href="#"
-onclick="logout()">
-Logout
-</a>
+  <div class="brand">TIMB3R ADMIN</div>
+  <a href="#" onclick="logout()">Logout</a>
 </nav>
 
 <main class="container">
 
-<h1>
-Operations Dashboard
-</h1>
+<h1>Operations Dashboard</h1>
 
-<h2>
-Users
-</h2>
+<h2>Users</h2>
+<div id="users">Loading...</div>
 
-<div id="users">
-Loading...
-</div>
+<h2>Pending EFT Payments</h2>
+<div id="payments">Loading...</div>
 
-<h2>
-Investment applications
-</h2>
+<h2>Transactions</h2>
+<div id="transactions">Loading...</div>
 
-<div id="investments">
-Loading...
-</div>
+<div id="status" class="status"></div>
 
 </main>
 
 <script>
+const token = localStorage.getItem("timb3rToken");
 
-const token =
-localStorage.getItem(
-  "timb3rToken"
-);
-
-function headers(){
-  return {
-    "Authorization":
-      "Bearer "+token
-  };
+if (!token) {
+  location.href = "/login.html";
 }
 
-async function load(){
+function headers(json = false) {
+  const h = {
+    Authorization: "Bearer " + token
+  };
 
-  const userRes =
-    await fetch(
-      "/api/admin/users",
-      {headers:headers()}
-    );
-
-  if(!userRes.ok){
-    location.href =
-      "/dashboard.html";
-    return;
+  if (json) {
+    h["Content-Type"] = "application/json";
   }
 
-  const users =
-    await userRes.json();
-
-  document.getElementById(
-    "users"
-  ).innerHTML =
-    users.map(
-      u => `
-      <div class="card">
-      <strong>${u.full_name}</strong>
-      <p>${u.email}</p>
-      <p>${u.role}</p>
-      <p>KYC: ${u.kyc_status}</p>
-      </div>
-      `
-    ).join("");
-
-  const invRes =
-    await fetch(
-      "/api/admin/investments",
-      {headers:headers()}
-    );
-
-  const investments =
-    await invRes.json();
-
-  document.getElementById(
-    "investments"
-  ).innerHTML =
-    investments.map(
-      i => `
-      <div class="card">
-      <strong>${i.email}</strong>
-      <p>
-      ${i.name} ${i.phase || ""}
-      </p>
-      <p>R${i.principal}</p>
-      <p>${i.status}</p>
-      </div>
-      `
-    ).join("");
+  return h;
 }
 
-function logout(){
-  localStorage.removeItem(
-    "timb3rToken"
+function esc(value) {
+  const div = document.createElement("div");
+  div.textContent = value ?? "";
+  return div.innerHTML;
+}
+
+function money(value) {
+  return "R" + Number(value || 0).toLocaleString("en-ZA", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  });
+}
+
+async function api(url, options = {}) {
+  const response = await fetch(url, options);
+
+  if (response.status === 401 || response.status === 403) {
+    localStorage.removeItem("timb3rToken");
+    location.href = "/login.html";
+    throw new Error("Session expired");
+  }
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.error || "Request failed");
+  }
+
+  return data;
+}
+
+async function loadUsers() {
+  const users = await api("/api/admin/users", {
+    headers: headers()
+  });
+
+  document.getElementById("users").innerHTML =
+    users.length
+      ? users.map(u => `
+        <div class="card">
+          <strong>${esc(u.name)}</strong>
+          <p>${esc(u.email)}</p>
+          <p>Role: ${esc(u.role)}</p>
+          <p>KYC: ${esc(u.kyc_status)}</p>
+        </div>
+      `).join("")
+      : "<p>No users found.</p>";
+}
+
+async function loadPayments() {
+  const data = await api("/api/admin/payments", {
+    headers: headers()
+  });
+
+  const payments = data.payments || [];
+
+  document.getElementById("payments").innerHTML =
+    payments.length
+      ? payments.map(p => `
+        <div class="card">
+          <strong>${esc(p.customer_name)}</strong>
+          <p>${esc(p.customer_email)}</p>
+          <p>Amount: ${money(p.amount)}</p>
+          <p>Reference: ${esc(p.profile_reference)}</p>
+          <p>Sender: ${esc(p.sender_name || "-")}</p>
+          <p>Bank: ${esc(p.sender_bank || "-")}</p>
+          <p>Status: ${esc(p.status)}</p>
+
+          ${
+            p.proof_url
+              ? `<p><a href="${esc(p.proof_url)}" target="_blank" rel="noopener">View proof of payment</a></p>`
+              : ""
+          }
+
+          ${
+            p.status === "pending"
+              ? `
+                <button onclick="approvePayment('${p.id}')">
+                  Approve EFT
+                </button>
+
+                <button onclick="rejectPayment('${p.id}')">
+                  Reject EFT
+                </button>
+              `
+              : ""
+          }
+        </div>
+      `).join("")
+      : "<p>No EFT payments found.</p>";
+}
+
+async function loadTransactions() {
+  const transactions = await api("/api/admin/transactions", {
+    headers: headers()
+  });
+
+  document.getElementById("transactions").innerHTML =
+    transactions.length
+      ? transactions.map(t => `
+        <div class="card">
+          <strong>${esc(t.reference)}</strong>
+          <p>${esc(t.email)}</p>
+          <p>${esc(t.type)}</p>
+          <p>${money(t.amount)}</p>
+          <p>Status: ${esc(t.status)}</p>
+        </div>
+      `).join("")
+      : "<p>No transactions found.</p>";
+}
+
+async function approvePayment(id) {
+  const note = prompt(
+    "Admin note:",
+    "Bank EFT manually verified"
   );
 
-  location.href="/login.html";
+  if (note === null) return;
+
+  try {
+    const data = await api(
+      "/api/admin/payments/" + encodeURIComponent(id) + "/approve",
+      {
+        method: "POST",
+        headers: headers(true),
+        body: JSON.stringify({ note })
+      }
+    );
+
+    alert(data.message || "Payment approved");
+    await load();
+  } catch (err) {
+    alert(err.message);
+  }
+}
+
+async function rejectPayment(id) {
+  const note = prompt(
+    "Reason for rejection:",
+    "Payment rejected"
+  );
+
+  if (note === null) return;
+
+  try {
+    const data = await api(
+      "/api/admin/payments/" + encodeURIComponent(id) + "/reject",
+      {
+        method: "POST",
+        headers: headers(true),
+        body: JSON.stringify({ note })
+      }
+    );
+
+    alert(data.message || "Payment rejected");
+    await load();
+  } catch (err) {
+    alert(err.message);
+  }
+}
+
+async function load() {
+  const status = document.getElementById("status");
+
+  try {
+    status.textContent = "Loading operations data...";
+
+    await Promise.all([
+      loadUsers(),
+      loadPayments(),
+      loadTransactions()
+    ]);
+
+    status.textContent = "";
+  } catch (err) {
+    console.error(err);
+    status.textContent = err.message;
+  }
+}
+
+function logout() {
+  localStorage.removeItem("timb3rToken");
+  location.href = "/login.html";
 }
 
 load();
-
 </script>
 
 </body>

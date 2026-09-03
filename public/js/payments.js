@@ -31,7 +31,6 @@ async function initPaymentScreen() {
     // Fetch bank details and profile ID
     await loadBankDetails();
     setupPaymentFormListeners();
-    setupDepositButtonListener();
 
   } catch (error) {
     console.error('Payment screen initialization failed:', error);
@@ -124,16 +123,6 @@ function setupPaymentFormListeners() {
   }
 }
 
-/**
- * Setup demo deposit button listener
- */
-function setupDepositButtonListener() {
-  const demoDepositBtn = document.getElementById('demoDepositBtn');
-  
-  if (demoDepositBtn) {
-    demoDepositBtn.addEventListener('click', demoDeposit);
-  }
-}
 
 /**
  * Validate amount input
@@ -329,59 +318,6 @@ function showPaymentSuccess(message) {
   }
 }
 
-/**
- * Demo deposit handler
- */
-async function demoDeposit() {
-  try {
-    clearPaymentErrors();
-
-    const btn = event?.currentTarget;
-    if (btn) btn.disabled = true;
-
-    const statusEl = document.getElementById('depositMsg') || document.getElementById('paymentStatus');
-
-    if (statusEl) {
-      statusEl.className = 'status-box show status-info';
-      statusEl.textContent = 'Processing demo deposit...';
-    }
-
-    const response = await fetch('/api/deposits', {
-      method: 'POST',
-      headers: {
-        ...headers(),
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ amount: 1000 })
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.error || 'Demo deposit failed');
-    }
-
-    // Success
-    if (statusEl) {
-      statusEl.className = 'status-box show status-success';
-      statusEl.innerHTML = `
-        <span class="success-text">✓ Demo Deposit Successful</span>
-        <br>Reference: <strong>${escapeHtml(data.reference)}</strong>
-        <br>Amount: <strong>R1,000.00</strong>
-      `;
-    }
-
-    // Reload dashboard
-    await load();
-
-  } catch (error) {
-    console.error('Demo deposit error:', error);
-    showPaymentError(error.message || 'Demo deposit failed. Please try again.');
-  } finally {
-    const btn = event?.currentTarget;
-    if (btn) btn.disabled = false;
-  }
-}
 
 /**
  * Copy to clipboard helper
