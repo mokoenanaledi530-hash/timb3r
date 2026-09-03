@@ -1,0 +1,93 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Create Account | TIMB3R</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+
+<div class="auth-page">
+
+  <section class="auth-brand">
+    <div class="logo">TIMB<span>3</span>R</div>
+    <h1>Start your journey.</h1>
+    <p>Create your investor account and access the TIMB3R platform.</p>
+  </section>
+
+  <section class="auth-area">
+    <div class="auth-box">
+      <div class="eyebrow">New Investor</div>
+      <h2>Create account</h2>
+
+      <form id="registerForm">
+        <div class="field">
+          <label>Full Name</label>
+          <input id="name" required>
+        </div>
+
+        <div class="field">
+          <label>Email</label>
+          <input id="email" type="email" required>
+        </div>
+
+        <div class="field">
+          <label>Password</label>
+          <input id="password" type="password" minlength="6" required>
+        </div>
+
+        <button class="btn btn-green full">Create Account</button>
+      </form>
+
+      <div id="status" class="status"></div>
+
+      <p class="small">
+        Already registered?
+        <a href="/login.html">Sign in</a>
+      </p>
+    </div>
+  </section>
+
+</div>
+
+<script>
+const form=document.getElementById("registerForm");
+const statusBox=document.getElementById("status");
+
+form.addEventListener("submit",async(e)=>{
+  e.preventDefault();
+
+  statusBox.style.display="block";
+  statusBox.className="status";
+  statusBox.textContent="Creating account...";
+
+  try{
+    const res=await fetch("/api/auth/register",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({
+        name:document.getElementById("name").value.trim(),
+        email:document.getElementById("email").value.trim(),
+        password:document.getElementById("password").value
+      })
+    });
+
+    const data=await res.json();
+
+    if(!res.ok) throw new Error(data.error || data.message || "Registration failed");
+
+    statusBox.className="status ok";
+    statusBox.textContent="Account created. Redirecting to login...";
+
+    setTimeout(()=>location.href="/login.html",1200);
+
+  }catch(err){
+    statusBox.className="status error";
+    statusBox.textContent=err.message;
+  }
+});
+</script>
+
+</body>
+</html>

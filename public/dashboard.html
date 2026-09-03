@@ -1,0 +1,788 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TIMB3R Investor Portal</title>
+<link rel="stylesheet" href="/styles.css">
+</head>
+
+<body>
+
+<header class="topbar">
+  <div class="logo">TIMB<span>3</span>R</div>
+
+  <div class="top-actions">
+    <span id="userTop">Investor</span>
+    <button class="btn btn-gold" onclick="logout()">Logout</button>
+  </div>
+</header>
+
+<div class="layout">
+
+<aside class="sidebar">
+  <button class="navbtn active" onclick="showPage('home',this)">⌂ Dashboard</button>
+  <button class="navbtn" onclick="showPage('invest',this)">🌲 Invest</button>
+  <button class="navbtn" onclick="showPage('fund',this)">＋ Fund Account</button>
+  <button class="navbtn" onclick="showPage('portfolio',this)">▣ Portfolio</button>
+  <button class="navbtn" onclick="showPage('transactions',this)">↔ Transactions</button>
+  <button class="navbtn" onclick="showPage('profile',this)">● Profile</button>
+</aside>
+
+<main class="main">
+
+<section id="page-home">
+
+  <div class="hero">
+    <div class="hero-content">
+      <div class="eyebrow" style="color:#e2c66f">TIMB3R INVESTOR PORTAL</div>
+      <h1>Build your forestry portfolio.</h1>
+      <p>
+        Explore available timber investment allocations and manage
+        your verified account balance from one dashboard.
+      </p>
+
+      <button class="btn btn-gold" onclick="showPage('invest')">
+        Explore Investments
+      </button>
+    </div>
+  </div>
+
+  <div class="stats">
+
+    <div class="stat">
+      <div class="stat-label">AVAILABLE BALANCE</div>
+      <div class="stat-value" id="available">R0.00</div>
+    </div>
+
+    <div class="stat">
+      <div class="stat-label">TOTAL INVESTED</div>
+      <div class="stat-value" id="invested">R0.00</div>
+    </div>
+
+    <div class="stat">
+      <div class="stat-label">RECORDED RETURNS</div>
+      <div class="stat-value" id="returns">R0.00</div>
+    </div>
+
+  </div>
+
+  <div class="card">
+    <h2>Welcome, <span id="welcomeName">Investor</span></h2>
+    <p class="muted">
+      Use Fund Account to submit your EFT details for verification.
+      Only verified completed funds become available for investment.
+    </p>
+  </div>
+
+</section>
+
+
+<section id="page-invest" class="hidden">
+
+  <div class="eyebrow">FORESTRY OPPORTUNITIES</div>
+  <h1>Investment Packages</h1>
+
+  <p class="muted">
+    Select an available phase. The investment amount is validated
+    again by the TIMB3R server before an investment can be created.
+  </p>
+
+  <div id="plansArea">
+    <div class="card">Loading investment packages...</div>
+  </div>
+
+</section>
+
+
+<section id="page-fund" class="hidden">
+
+  <div class="eyebrow">ACCOUNT FUNDING</div>
+  <h1>Fund Account</h1>
+
+  <div class="card">
+
+    <h2>Bank Transfer / EFT</h2>
+
+    <p class="muted">
+      Transfer funds using the bank details below and submit the
+      payment information for verification.
+    </p>
+
+    <div id="bankDetails" class="bank-box">
+      Loading bank details...
+    </div>
+
+    <form id="paymentForm">
+
+      <div class="field">
+        <label>Amount paid (ZAR)</label>
+        <input id="payAmount" type="number" min="1" step=".01" required>
+      </div>
+
+      <div class="field">
+        <label>Sender name</label>
+        <input id="senderName" required>
+      </div>
+
+      <div class="field">
+        <label>Sender bank</label>
+        <input id="senderBank" required>
+      </div>
+
+      <div class="field">
+        <label>Payment date</label>
+        <input id="paymentDate" type="date" required>
+      </div>
+
+      <div class="field">
+        <label>Payment reference</label>
+        <input id="paymentReference" required>
+      </div>
+
+      <div class="field">
+        <label>Proof URL / uploaded proof reference</label>
+        <input id="proofUrl" placeholder="Payment proof reference">
+      </div>
+
+      <button class="btn btn-green">Submit for Verification</button>
+
+    </form>
+
+    <div id="paymentStatus"></div>
+
+  </div>
+
+</section>
+
+
+<section id="page-portfolio" class="hidden">
+
+  <div class="eyebrow">MY INVESTMENTS</div>
+  <h1>Portfolio</h1>
+
+  <div class="card table-wrap">
+
+    <table>
+      <thead>
+        <tr>
+          <th>Plan</th>
+          <th>Principal</th>
+          <th>Status</th>
+          <th>Started</th>
+          <th>Maturity</th>
+        </tr>
+      </thead>
+
+      <tbody id="portfolioRows">
+        <tr><td colspan="5">Loading...</td></tr>
+      </tbody>
+    </table>
+
+  </div>
+
+</section>
+
+
+<section id="page-transactions" class="hidden">
+
+  <div class="eyebrow">ACCOUNT ACTIVITY</div>
+  <h1>Transactions</h1>
+
+  <div class="card table-wrap">
+
+    <table>
+      <thead>
+        <tr>
+          <th>Reference</th>
+          <th>Type</th>
+          <th>Amount</th>
+          <th>Status</th>
+          <th>Date</th>
+        </tr>
+      </thead>
+
+      <tbody id="transactionRows">
+        <tr><td colspan="5">Loading...</td></tr>
+      </tbody>
+
+    </table>
+
+  </div>
+
+</section>
+
+
+<section id="page-profile" class="hidden">
+
+  <div class="eyebrow">ACCOUNT</div>
+  <h1>Profile</h1>
+
+  <div class="card" id="profileBox">
+    Loading profile...
+  </div>
+
+</section>
+
+</main>
+</div>
+
+
+<nav class="mobile-nav">
+  <button onclick="showPage('home')">⌂<br>Home</button>
+  <button onclick="showPage('invest')">🌲<br>Invest</button>
+  <button onclick="showPage('fund')">＋<br>Fund</button>
+  <button onclick="showPage('portfolio')">▣<br>Portfolio</button>
+  <button onclick="showPage('transactions')">↔<br>Activity</button>
+</nav>
+
+
+<div id="investModal" class="modal hidden">
+
+  <div class="modal-box">
+
+    <button class="close" onclick="closeInvest()">×</button>
+
+    <div class="eyebrow">CONFIRM INVESTMENT</div>
+
+    <h2 id="modalPlan">Investment</h2>
+
+    <p>Investment amount:</p>
+
+    <div class="phase-price" id="modalAmount">R0.00</div>
+
+    <p class="muted" id="modalTerm"></p>
+
+    <p>
+      Funds must already be present in your verified available balance.
+    </p>
+
+    <button id="confirmInvest" class="btn btn-green">
+      Confirm Investment
+    </button>
+
+    <div id="investStatus"></div>
+
+  </div>
+
+</div>
+
+
+<script>
+
+const token=localStorage.getItem("timb3rToken");
+
+if(!token){
+  location.replace("/login.html");
+}
+
+let selectedPlan=null;
+
+function money(value){
+  return new Intl.NumberFormat(
+    "en-ZA",
+    {
+      style:"currency",
+      currency:"ZAR"
+    }
+  ).format(Number(value||0));
+}
+
+function date(value){
+  if(!value) return "—";
+  return new Date(value).toLocaleDateString("en-ZA");
+}
+
+async function api(path,options={}){
+  options.headers={
+    ...(options.headers||{}),
+    Authorization:"Bearer "+token
+  };
+
+  const res=await fetch(path,options);
+
+  let data={};
+
+  try{
+    data=await res.json();
+  }catch{}
+
+  if(res.status===401){
+    localStorage.removeItem("timb3rToken");
+    location.replace("/login.html");
+    throw new Error("Session expired");
+  }
+
+  if(!res.ok){
+    throw new Error(data.error||"Request failed");
+  }
+
+  return data;
+}
+
+
+function showPage(name,button){
+
+  document.querySelectorAll(
+    'main > section'
+  ).forEach(el=>el.classList.add("hidden"));
+
+  document.getElementById(
+    "page-"+name
+  ).classList.remove("hidden");
+
+  document.querySelectorAll(".navbtn")
+    .forEach(b=>b.classList.remove("active"));
+
+  if(button){
+    button.classList.add("active");
+  }
+
+  if(name==="portfolio") loadPortfolio();
+  if(name==="transactions") loadTransactions();
+  if(name==="profile") loadProfile();
+  if(name==="fund") loadBank();
+
+  window.scrollTo(0,0);
+}
+
+
+async function loadDashboard(){
+
+  try{
+
+    const d=await api("/api/dashboard");
+
+    document.getElementById("available").textContent=
+      money(d.available);
+
+    document.getElementById("invested").textContent=
+      money(d.invested);
+
+    document.getElementById("returns").textContent=
+      money(d.returns);
+
+  }catch(e){
+    console.error(e);
+  }
+}
+
+
+async function loadProfile(){
+
+  try{
+
+    const u=await api("/api/me");
+
+    document.getElementById("welcomeName").textContent=
+      u.name||"Investor";
+
+    document.getElementById("userTop").textContent=
+      u.name||u.email||"Investor";
+
+    document.getElementById("profileBox").innerHTML=`
+      <p><strong>Name:</strong> ${escapeHtml(u.name||"—")}</p>
+      <p><strong>Email:</strong> ${escapeHtml(u.email||"—")}</p>
+      <p><strong>Role:</strong> ${escapeHtml(u.role||"investor")}</p>
+      <p><strong>KYC status:</strong> ${escapeHtml(u.kyc_status||"pending")}</p>
+      <p><strong>Referral code:</strong> ${escapeHtml(u.referral_code||"—")}</p>
+    `;
+
+  }catch(e){
+    document.getElementById("profileBox").textContent=e.message;
+  }
+}
+
+
+function escapeHtml(value){
+  return String(value)
+    .replaceAll("&","&amp;")
+    .replaceAll("<","&lt;")
+    .replaceAll(">","&gt;")
+    .replaceAll('"',"&quot;");
+}
+
+
+function groupName(name){
+
+  if(name.includes("Starter Grove")) return "Starter Grove";
+  if(name.includes("Growth Grove")) return "Growth Grove";
+  if(name.includes("Timber Builder")) return "Timber Builder";
+  if(name.includes("Forest Partner")) return "Forest Partner";
+  if(name.includes("Premium Forest")) return "Premium Forest";
+
+  return "Other";
+}
+
+
+function groupClass(group){
+
+  return {
+    "Starter Grove":"starter",
+    "Growth Grove":"growth",
+    "Timber Builder":"builder",
+    "Forest Partner":"partner",
+    "Premium Forest":"premium"
+  }[group]||"starter";
+}
+
+
+async function loadPlans(){
+
+  const area=document.getElementById("plansArea");
+
+  try{
+
+    const plans=await api("/api/plans");
+
+    const groups={};
+
+    plans.forEach(plan=>{
+      const group=groupName(plan.name);
+
+      if(!groups[group]){
+        groups[group]=[];
+      }
+
+      groups[group].push(plan);
+    });
+
+    const order=[
+      "Starter Grove",
+      "Growth Grove",
+      "Timber Builder",
+      "Forest Partner",
+      "Premium Forest"
+    ];
+
+    area.innerHTML="";
+
+    order.forEach(group=>{
+
+      if(!groups[group]) return;
+
+      groups[group].sort(
+        (a,b)=>Number(a.min_amount)-Number(b.min_amount)
+      );
+
+      const section=document.createElement("section");
+      section.className="package-section";
+
+      section.innerHTML=`
+        <div class="package-banner ${groupClass(group)}">
+          <div>
+            <div class="eyebrow" style="color:#f2d77c">
+              TIMBER INVESTMENT
+            </div>
+            <h2>${escapeHtml(group)}</h2>
+          </div>
+        </div>
+
+        <div class="phase-grid">
+          ${groups[group].map(plan=>{
+
+            const phase=
+              (plan.name.match(/Phase\s+(\d+)/i)||[])[1]||"";
+
+            return `
+              <article class="phase-card">
+
+                <div class="phase-img">
+                  🌲
+                </div>
+
+                <div class="phase-body">
+
+                  <div class="phase-title">
+                    Phase ${escapeHtml(phase)}
+                  </div>
+
+                  <div class="phase-price">
+                    ${money(plan.min_amount)}
+                  </div>
+
+                  <div class="phase-meta">
+                    ${Number(plan.term_days)} day term
+                  </div>
+
+                  <button
+                    class="btn btn-green"
+                    style="width:100%"
+                    onclick='openInvest(${JSON.stringify(JSON.stringify(plan))})'>
+                    Invest Now
+                  </button>
+
+                </div>
+
+              </article>
+            `;
+          }).join("")}
+        </div>
+      `;
+
+      area.appendChild(section);
+    });
+
+    if(!plans.length){
+      area.innerHTML=
+        '<div class="card">No active investment packages are currently available.</div>';
+    }
+
+  }catch(e){
+
+    area.innerHTML=
+      `<div class="card">${escapeHtml(e.message)}</div>`;
+  }
+}
+
+
+function openInvest(json){
+
+  selectedPlan=JSON.parse(json);
+
+  document.getElementById("modalPlan").textContent=
+    selectedPlan.name;
+
+  document.getElementById("modalAmount").textContent=
+    money(selectedPlan.min_amount);
+
+  document.getElementById("modalTerm").textContent=
+    `${selectedPlan.term_days} day investment term`;
+
+  document.getElementById("investStatus").innerHTML="";
+
+  document.getElementById("investModal")
+    .classList.remove("hidden");
+}
+
+
+function closeInvest(){
+
+  selectedPlan=null;
+
+  document.getElementById("investModal")
+    .classList.add("hidden");
+}
+
+
+document.getElementById("confirmInvest")
+.addEventListener("click",async()=>{
+
+  if(!selectedPlan) return;
+
+  const status=document.getElementById("investStatus");
+
+  status.className="status";
+  status.textContent="Processing investment...";
+
+  try{
+
+    const result=await api(
+      "/api/investments",
+      {
+        method:"POST",
+        headers:{
+          "Content-Type":"application/json"
+        },
+        body:JSON.stringify({
+          planId:selectedPlan.id,
+          amount:Number(selectedPlan.min_amount)
+        })
+      }
+    );
+
+    status.className="status ok";
+
+    status.textContent=
+      "Investment created successfully. Reference: "+
+      result.reference;
+
+    await loadDashboard();
+
+    setTimeout(()=>{
+      closeInvest();
+      showPage("portfolio");
+    },1200);
+
+  }catch(e){
+
+    status.className="status error";
+    status.textContent=e.message;
+  }
+});
+
+
+async function loadPortfolio(){
+
+  const rows=document.getElementById("portfolioRows");
+
+  rows.innerHTML='<tr><td colspan="5">Loading...</td></tr>';
+
+  try{
+
+    const data=await api("/api/investments");
+
+    if(!data.length){
+
+      rows.innerHTML=
+        '<tr><td colspan="5">No investments yet.</td></tr>';
+
+      return;
+    }
+
+    rows.innerHTML=data.map(i=>`
+      <tr>
+        <td>${escapeHtml(i.plan_name)}</td>
+        <td>${money(i.principal)}</td>
+        <td>${escapeHtml(i.status)}</td>
+        <td>${date(i.started_at)}</td>
+        <td>${date(i.maturity_at)}</td>
+      </tr>
+    `).join("");
+
+  }catch(e){
+
+    rows.innerHTML=
+      `<tr><td colspan="5">${escapeHtml(e.message)}</td></tr>`;
+  }
+}
+
+
+async function loadTransactions(){
+
+  const rows=document.getElementById("transactionRows");
+
+  rows.innerHTML='<tr><td colspan="5">Loading...</td></tr>';
+
+  try{
+
+    const data=await api("/api/transactions");
+
+    if(!data.length){
+
+      rows.innerHTML=
+        '<tr><td colspan="5">No transactions yet.</td></tr>';
+
+      return;
+    }
+
+    rows.innerHTML=data.map(t=>`
+      <tr>
+        <td>${escapeHtml(t.reference)}</td>
+        <td>${escapeHtml(t.type)}</td>
+        <td>${money(t.amount)}</td>
+        <td>${escapeHtml(t.status)}</td>
+        <td>${date(t.created_at)}</td>
+      </tr>
+    `).join("");
+
+  }catch(e){
+
+    rows.innerHTML=
+      `<tr><td colspan="5">${escapeHtml(e.message)}</td></tr>`;
+  }
+}
+
+
+async function loadBank(){
+
+  const box=document.getElementById("bankDetails");
+
+  try{
+
+    const d=await api("/api/payments/bank-details");
+
+    box.innerHTML=Object.entries(d)
+      .map(([key,value])=>`
+        <div>
+          <strong>${escapeHtml(
+            key.replaceAll("_"," ")
+          )}:</strong>
+          ${escapeHtml(value)}
+        </div>
+      `).join("");
+
+  }catch(e){
+
+    box.textContent=e.message;
+  }
+}
+
+
+document.getElementById("paymentForm")
+.addEventListener("submit",async e=>{
+
+  e.preventDefault();
+
+  const status=document.getElementById("paymentStatus");
+
+  status.className="status";
+  status.textContent="Submitting payment for verification...";
+
+  const payload={
+    amount:Number(
+      document.getElementById("payAmount").value
+    ),
+
+    senderName:
+      document.getElementById("senderName").value,
+
+    senderBank:
+      document.getElementById("senderBank").value,
+
+    paymentDate:
+      document.getElementById("paymentDate").value,
+
+    profileReference:
+      document.getElementById("paymentReference").value,
+
+    proofUrl:
+      document.getElementById("proofUrl").value
+  };
+
+  try{
+
+    const result=await api(
+      "/api/payments/bank",
+      {
+        method:"POST",
+        headers:{
+          "Content-Type":"application/json"
+        },
+        body:JSON.stringify(payload)
+      }
+    );
+
+    status.className="status ok";
+
+    status.textContent=
+      result.message||
+      "Payment submitted for verification.";
+
+    e.target.reset();
+
+  }catch(err){
+
+    status.className="status error";
+    status.textContent=err.message;
+  }
+});
+
+
+function logout(){
+
+  localStorage.removeItem("timb3rToken");
+  location.replace("/login.html");
+}
+
+
+Promise.all([
+  loadDashboard(),
+  loadPlans(),
+  loadProfile()
+]);
+
+</script>
+
+</body>
+</html>

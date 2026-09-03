@@ -1640,6 +1640,24 @@ app.post(
 );
 
 
+
+/* =========================
+   TIMB3R FRONTEND PAGES
+========================= */
+
+app.get("/login", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "login.html"));
+});
+
+app.get("/register", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "register.html"));
+});
+
+app.get("/dashboard", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "dashboard.html"));
+});
+
+
 /* =========================
    FRONTEND CATCH-ALL
    MUST BE LAST

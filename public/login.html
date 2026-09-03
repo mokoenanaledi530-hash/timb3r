@@ -1,0 +1,91 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Investor Login | TIMB3R</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+
+<div class="auth-page">
+
+  <section class="auth-brand">
+    <div class="logo">TIMB<span>3</span>R</div>
+    <h1>Welcome back.</h1>
+    <p>Access your forestry investment dashboard and portfolio.</p>
+  </section>
+
+  <section class="auth-area">
+    <div class="auth-box">
+      <div class="eyebrow">Investor Portal</div>
+      <h2>Sign in</h2>
+
+      <form id="loginForm">
+        <div class="field">
+          <label>Email</label>
+          <input id="email" type="email" required>
+        </div>
+
+        <div class="field">
+          <label>Password</label>
+          <input id="password" type="password" required>
+        </div>
+
+        <button class="btn btn-green full">Sign In</button>
+      </form>
+
+      <div id="status" class="status"></div>
+
+      <p class="small">
+        Don't have an account?
+        <a href="/register.html">Register here</a>
+      </p>
+
+      <p class="small"><a href="/">← Back to TIMB3R</a></p>
+    </div>
+  </section>
+
+</div>
+
+<script>
+const form = document.getElementById("loginForm");
+const statusBox = document.getElementById("status");
+
+form.addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  statusBox.className = "status";
+  statusBox.style.display = "block";
+  statusBox.textContent = "Connecting...";
+
+  try {
+    const res = await fetch("/api/auth/login", {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({
+        email:document.getElementById("email").value.trim(),
+        password:document.getElementById("password").value
+      })
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) throw new Error(data.error || data.message || "Invalid login");
+
+    localStorage.setItem("timb3rToken", data.token);
+
+    statusBox.className = "status ok";
+    statusBox.textContent = "Login successful";
+
+    location.href="/dashboard.html";
+
+  } catch(err) {
+    statusBox.className="status error";
+    statusBox.textContent=err.message;
+  }
+});
+</script>
+
+</body>
+</html>
