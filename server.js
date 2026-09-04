@@ -1900,6 +1900,217 @@ app.get(
 );
 
 
+
+/* =========================
+   TIMB3R AI ASSISTANT
+========================= */
+
+const assistantRateLimit = new Map();
+
+app.post(
+  "/api/assistant",
+  auth,
+  async (req, res) => {
+
+    const apiKey =
+      process.env.OPENAI_API_KEY;
+
+    if (!apiKey) {
+      return res.status(503).json({
+        error:
+          "TIMB3R Assistant is not configured"
+      });
+    }
+
+    const message =
+      String(req.body.message || "")
+        .trim();
+
+    if (!message) {
+      return res.status(400).json({
+        error:
+          "Enter a message"
+      });
+    }
+
+    if (message.length > 1500) {
+      return res.status(400).json({
+        error:
+          "Message is too long"
+      });
+    }
+
+    /*
+     * Basic per-user API cost protection.
+     * Maximum 10 requests per 5 minutes.
+     */
+    const now = Date.now();
+
+    const current =
+      assistantRateLimit.get(
+        req.user.id
+      ) || {
+        started: now,
+        count: 0
+      };
+
+    if (
+      now - current.started >
+      5 * 60 * 1000
+    ) {
+      current.started = now;
+      current.count = 0;
+    }
+
+    current.count++;
+
+    assistantRateLimit.set(
+      req.user.id,
+      current
+    );
+
+    if (current.count > 10) {
+      return res.status(429).json({
+        error:
+          "Please wait before sending another assistant request"
+      });
+    }
+
+    try {
+
+      const response =
+        await fetch(
+          "https://api.openai.com/v1/responses",
+          {
+            method: "POST",
+
+            headers: {
+              "Content-Type":
+                "application/json",
+
+              Authorization:
+                "Bearer " +
+                apiKey
+            },
+
+            body:
+              JSON.stringify({
+
+                model:
+                  process.env
+                    .OPENAI_MODEL ||
+                  "gpt-5.6-luna",
+
+                store: false,
+
+                max_output_tokens:
+                  600,
+
+                instructions: `
+You are the official TIMB3R investor support assistant.
+
+TIMB3R is a forestry investment platform.
+
+Your role is customer support and platform guidance.
+
+You may:
+- explain how registration works
+- explain how investors use the dashboard
+- explain investment package information shown by TIMB3R
+- explain manual EFT deposit procedures
+- explain payment verification
+- explain withdrawals
+- explain payout bank-account requirements
+- explain KYC requirements
+- explain referral links
+- explain transaction statuses
+- explain how daily returns shown on the platform work
+
+Important platform rules:
+- Deposits are manual EFT deposits.
+- EFT deposits must be verified by an authorized administrator before being credited.
+- Never claim a payment is approved unless the TIMB3R system says so.
+- Withdrawals require verified KYC and saved payout banking details.
+- Withdrawal requests are accepted daily from 07:00 until 15:00 South Africa time.
+- Do not claim an investment or return is guaranteed.
+- Do not give personalized financial, legal, tax, or investment advice.
+- Do not tell investors to bypass KYC or security controls.
+- Never request passwords, banking PINs, card PINs, OTPs, API keys, or authentication tokens.
+- Never approve deposits or withdrawals yourself.
+- For account-specific balances or transaction states, tell the investor to rely on the live TIMB3R dashboard.
+- Keep answers clear, concise and professional.
+                `,
+
+                input: message
+
+              })
+          }
+        );
+
+      const data =
+        await response.json();
+
+      if (!response.ok) {
+
+        console.error(
+          "OPENAI ASSISTANT ERROR:",
+          response.status,
+          data.error?.type ||
+          data.error?.code ||
+          "request_failed"
+        );
+
+        return res.status(502).json({
+          error:
+            "Assistant is temporarily unavailable"
+        });
+      }
+
+      const answer =
+        (data.output || [])
+          .flatMap(
+            item =>
+              item.content || []
+          )
+          .filter(
+            item =>
+              item.type ===
+              "output_text"
+          )
+          .map(
+            item =>
+              item.text || ""
+          )
+          .join("\n")
+          .trim();
+
+      if (!answer) {
+        return res.status(502).json({
+          error:
+            "Assistant returned no response"
+        });
+      }
+
+      res.json({
+        answer
+      });
+
+    } catch (err) {
+
+      console.error(
+        "ASSISTANT ERROR:",
+        err.message
+      );
+
+      res.status(500).json({
+        error:
+          "Assistant is temporarily unavailable"
+      });
+    }
+  }
+);
+
+
 /* =========================
    PAYMENT WEBHOOK
 ========================= */

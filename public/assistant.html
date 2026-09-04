@@ -1,0 +1,316 @@
+<!doctype html>
+<html>
+
+<head>
+
+<meta charset="utf-8">
+
+<meta
+name="viewport"
+content="width=device-width,initial-scale=1">
+
+<title>TIMB3R Assistant</title>
+
+<link
+rel="stylesheet"
+href="/styles.css">
+
+</head>
+
+<body>
+
+<nav class="main-nav">
+
+<div class="brand">
+TIMB3R
+</div>
+
+<div class="nav-links">
+
+<a href="/dashboard.html">
+Dashboard
+</a>
+
+<a href="/payment.html">
+Deposit
+</a>
+
+<a href="/withdraw.html">
+Withdraw
+</a>
+
+<a href="/assistant.html">
+Assistant
+</a>
+
+<a href="/transactions.html">
+Transactions
+</a>
+
+<a
+href="#"
+onclick="logout()">
+Logout
+</a>
+
+</div>
+
+</nav>
+
+
+<main
+class="container assistant-page">
+
+<a
+class="back-link"
+href="/dashboard.html">
+
+← Investor dashboard
+
+</a>
+
+
+<div class="assistant-header">
+
+<h1>
+TIMB3R Assistant
+</h1>
+
+<p class="small">
+
+Ask about deposits,
+withdrawals,
+investment packages,
+KYC,
+referrals or how to use
+TIMB3R.
+
+</p>
+
+</div>
+
+
+<div
+id="chat"
+class="assistant-chat">
+
+<div
+class="assistant-message assistant-bot">
+
+Welcome to TIMB3R.
+
+How can I help you with
+your investor account or
+the TIMB3R platform?
+
+</div>
+
+</div>
+
+
+<form
+id="assistantForm"
+class="assistant-form">
+
+<textarea
+id="message"
+maxlength="1500"
+rows="4"
+placeholder="Ask TIMB3R Assistant..."
+required></textarea>
+
+<button
+id="sendButton"
+class="btn"
+type="submit">
+
+Send
+
+</button>
+
+</form>
+
+
+<p
+id="assistantStatus"
+class="status">
+</p>
+
+</main>
+
+
+<script>
+
+const token =
+localStorage.getItem(
+  "timb3rToken"
+);
+
+if(!token){
+  location.href =
+    "/login.html";
+}
+
+
+function addMessage(
+  type,
+  message
+){
+
+  const chat =
+    document.getElementById(
+      "chat"
+    );
+
+  const bubble =
+    document.createElement(
+      "div"
+    );
+
+  bubble.className =
+    "assistant-message " +
+    (
+      type === "user"
+      ? "assistant-user"
+      : "assistant-bot"
+    );
+
+  bubble.textContent =
+    message;
+
+  chat.appendChild(
+    bubble
+  );
+
+  chat.scrollTop =
+    chat.scrollHeight;
+}
+
+
+document
+.getElementById(
+  "assistantForm"
+)
+.addEventListener(
+  "submit",
+  async event => {
+
+    event.preventDefault();
+
+    const input =
+      document.getElementById(
+        "message"
+      );
+
+    const button =
+      document.getElementById(
+        "sendButton"
+      );
+
+    const status =
+      document.getElementById(
+        "assistantStatus"
+      );
+
+    const message =
+      input.value.trim();
+
+    if(!message){
+      return;
+    }
+
+    addMessage(
+      "user",
+      message
+    );
+
+    input.value = "";
+
+    button.disabled = true;
+
+    button.textContent =
+      "Thinking...";
+
+    status.textContent = "";
+
+    try {
+
+      const response =
+        await fetch(
+          "/api/assistant",
+          {
+
+            method:"POST",
+
+            headers:{
+              "Content-Type":
+                "application/json",
+
+              Authorization:
+                "Bearer " +
+                token
+            },
+
+            body:
+              JSON.stringify({
+                message
+              })
+          }
+        );
+
+      if(
+        response.status === 401
+      ){
+        logout();
+        return;
+      }
+
+      const data =
+        await response.json();
+
+      if(!response.ok){
+        throw new Error(
+          data.error ||
+          "Assistant unavailable"
+        );
+      }
+
+      addMessage(
+        "bot",
+        data.answer
+      );
+
+    } catch(err){
+
+      status.textContent =
+        err.message;
+
+    } finally {
+
+      button.disabled =
+        false;
+
+      button.textContent =
+        "Send";
+
+      input.focus();
+    }
+  }
+);
+
+
+function logout(){
+
+localStorage.removeItem(
+  "timb3rToken"
+);
+
+location.href =
+  "/login.html";
+
+}
+
+</script>
+
+</body>
+</html>
