@@ -9,571 +9,63 @@
 
 <body>
 
-<nav>
-  <div class="brand">TIMB3R ADMIN</div>
-  <a href="#" onclick="logout()">Logout</a>
+<nav class="main-nav">
+<div class="brand">TIMB3R ADMIN</div>
+
+<div class="nav-links">
+<a href="/admin.html">Overview</a>
+<a href="/admin-investors.html">Investors</a>
+<a href="/admin-deposits.html">Deposits</a>
+<a href="/admin-investments.html">Investments</a>
+<a href="/admin-withdrawals.html">Withdrawals</a>
+<a href="/admin-transactions.html">Transactions</a>
+<a href="#" onclick="logout()">Logout</a>
+</div>
 </nav>
 
-<main class="container">
+<main class="container admin-page">
 
 <h1>Operations Dashboard</h1>
+<p class="small">Choose the section you want to manage.</p>
 
-<h2>Users</h2>
-<div id="users">Loading...</div>
+<div class="admin-grid">
 
-<h2>Pending EFT Payments</h2>
-<div id="payments">Loading...</div>
+<a class="card admin-menu-card" href="/admin-investors.html">
+<h2>Investors</h2>
+<p>View investors and KYC status.</p>
+</a>
 
+<a class="card admin-menu-card" href="/admin-deposits.html">
+<h2>EFT Deposits</h2>
+<p>Approve or reject payment proofs.</p>
+</a>
+
+<a class="card admin-menu-card" href="/admin-investments.html">
 <h2>Investments</h2>
-<div id="investments">Loading...</div>
+<p>See who invested and which package they bought.</p>
+</a>
 
-<h2>Withdrawal Requests</h2>
-<div id="withdrawals">Loading...</div>
+<a class="card admin-menu-card" href="/admin-withdrawals.html">
+<h2>Withdrawals</h2>
+<p>Review and process investor withdrawals.</p>
+</a>
 
+<a class="card admin-menu-card" href="/admin-transactions.html">
 <h2>Transactions</h2>
-<div id="transactions">Loading...</div>
+<p>See the full transaction history.</p>
+</a>
+
+</div>
 
 <div id="status" class="status"></div>
 
 </main>
 
+<script src="/admin-common.js"></script>
 <script>
-const token = localStorage.getItem("timb3rToken");
-
-if (!token) {
-  location.href = "/login.html";
-}
-
-function headers(json = false) {
-  const h = {
-    Authorization: "Bearer " + token
-  };
-
-  if (json) {
-    h["Content-Type"] = "application/json";
-  }
-
-  return h;
-}
-
-function esc(value) {
-  const div = document.createElement("div");
-  div.textContent = value ?? "";
-  return div.innerHTML;
-}
-
-function money(value) {
-  return "R" + Number(value || 0).toLocaleString("en-ZA", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  });
-}
-
-async function api(url, options = {}) {
-  const response = await fetch(url, options);
-
-  if (response.status === 401 || response.status === 403) {
-    localStorage.removeItem("timb3rToken");
-    location.href = "/login.html";
-    throw new Error("Session expired");
-  }
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.error || "Request failed");
-  }
-
-  return data;
-}
-
-async function loadUsers() {
-  const users = await api("/api/admin/users", {
-    headers: headers()
-  });
-
-  document.getElementById("users").innerHTML =
-    users.length
-      ? users.map(u => `
-        <div class="card">
-          <strong>${esc(u.name)}</strong>
-          <p>${esc(u.email)}</p>
-          <p>Role: ${esc(u.role)}</p>
-          <p>KYC: ${esc(u.kyc_status)}</p>
-        </div>
-      `).join("")
-      : "<p>No users found.</p>";
-}
-
-async function loadPayments() {
-  const data = await api("/api/admin/payments", {
-    headers: headers()
-  });
-
-  const payments = data.payments || [];
-
-  document.getElementById("payments").innerHTML =
-    payments.length
-      ? payments.map(p => `
-        <div class="card">
-          <strong>${esc(p.customer_name)}</strong>
-          <p>${esc(p.customer_email)}</p>
-          <p>Amount: ${money(p.amount)}</p>
-          <p>Reference: ${esc(p.profile_reference)}</p>
-          <p>Sender: ${esc(p.sender_name || "-")}</p>
-          <p>Bank: ${esc(p.sender_bank || "-")}</p>
-          <p>Status: ${esc(p.status)}</p>
-
-          ${
-            p.proof_url
-              ? `<p><a href="${esc(p.proof_url)}" target="_blank" rel="noopener">View proof of payment</a></p>`
-              : ""
-          }
-
-          ${
-            p.status === "pending"
-              ? `
-                <button onclick="approvePayment('${p.id}')">
-                  Approve EFT
-                </button>
-
-                <button onclick="rejectPayment('${p.id}')">
-                  Reject EFT
-                </button>
-              `
-              : ""
-          }
-        </div>
-      `).join("")
-      : "<p>No EFT payments found.</p>";
-}
-
-
-async function loadInvestments() {
-
-  const investments =
-    await api(
-      "/api/admin/investments",
-      {
-        headers: headers()
-      }
-    );
-
-  document.getElementById(
-    "investments"
-  ).innerHTML =
-
-    investments.length
-
-    ? investments.map(i => `
-      <div class="card">
-
-        <strong>
-          ${esc(i.investor_name)}
-        </strong>
-
-        <p>
-          ${esc(i.investor_email)}
-        </p>
-
-        <p>
-          Package:
-          ${esc(i.plan_name)}
-        </p>
-
-        <p>
-          Principal:
-          ${money(i.principal)}
-        </p>
-
-        <p>
-          Daily return:
-          ${
-            i.daily_return_amount
-              ? money(
-                  i.daily_return_amount
-                ) + " / day"
-              : "-"
-          }
-        </p>
-
-        <p>
-          Status:
-          ${esc(i.status)}
-        </p>
-
-        <p>
-          Started:
-          ${
-            i.started_at
-              ? new Date(
-                  i.started_at
-                ).toLocaleString(
-                  "en-ZA"
-                )
-              : "-"
-          }
-        </p>
-
-        <p>
-          Maturity:
-          ${
-            i.maturity_at
-              ? new Date(
-                  i.maturity_at
-                ).toLocaleString(
-                  "en-ZA"
-                )
-              : "-"
-          }
-        </p>
-
-      </div>
-    `).join("")
-
-    : "<p>No investments found.</p>";
-}
-
-
-async function loadWithdrawals() {
-
-  const withdrawals =
-    await api(
-      "/api/admin/withdrawals",
-      {
-        headers: headers()
-      }
-    );
-
-  document.getElementById(
-    "withdrawals"
-  ).innerHTML =
-
-    withdrawals.length
-
-    ? withdrawals.map(w => `
-      <div class="card">
-
-        <strong>
-          ${esc(w.investor_name)}
-        </strong>
-
-        <p>
-          ${esc(w.investor_email)}
-        </p>
-
-        <p>
-          Amount:
-          ${money(w.amount)}
-        </p>
-
-        <p>
-          Reference:
-          ${esc(w.reference)}
-        </p>
-
-        <p>
-          Status:
-          ${esc(w.status)}
-        </p>
-
-        <hr>
-
-        <strong>
-          Payout bank
-        </strong>
-
-        <p>
-          Account holder:
-          ${esc(
-            w.account_holder || "-"
-          )}
-        </p>
-
-        <p>
-          Bank:
-          ${esc(
-            w.bank_name || "-"
-          )}
-        </p>
-
-        <p>
-          Account type:
-          ${esc(
-            w.account_type || "-"
-          )}
-        </p>
-
-        <p>
-          Account number:
-          ${esc(
-            w.account_number || "-"
-          )}
-        </p>
-
-        <p>
-          Branch code:
-          ${esc(
-            w.branch_code || "-"
-          )}
-        </p>
-
-        ${
-          w.status === "pending"
-          ? `
-            <button
-              onclick="approveWithdrawal(
-                '${w.reference}'
-              )">
-              Approve for payment
-            </button>
-
-            <button
-              onclick="rejectWithdrawal(
-                '${w.reference}'
-              )">
-              Reject
-            </button>
-          `
-          : ""
-        }
-
-        ${
-          w.status === "processing"
-          ? `
-            <button
-              onclick="markWithdrawalPaid(
-                '${w.reference}'
-              )">
-              Mark paid
-            </button>
-
-            <button
-              onclick="rejectWithdrawal(
-                '${w.reference}'
-              )">
-              Reject
-            </button>
-          `
-          : ""
-        }
-
-      </div>
-    `).join("")
-
-    : "<p>No withdrawal requests found.</p>";
-}
-
-
-async function approveWithdrawal(
-  reference
-) {
-
-  if (!confirm(
-    "Approve this withdrawal for EFT payment?"
-  )) {
-    return;
-  }
-
-  try {
-
-    const data = await api(
-      "/api/admin/withdrawals/" +
-      encodeURIComponent(reference) +
-      "/approve",
-      {
-        method: "POST",
-        headers: headers(true),
-        body: JSON.stringify({})
-      }
-    );
-
-    alert(
-      data.message ||
-      "Withdrawal approved"
-    );
-
-    await load();
-
-  } catch (err) {
-    alert(err.message);
-  }
-}
-
-
-async function rejectWithdrawal(
-  reference
-) {
-
-  const note = prompt(
-    "Reason for rejection:",
-    "Withdrawal rejected"
-  );
-
-  if (note === null) {
-    return;
-  }
-
-  try {
-
-    const data = await api(
-      "/api/admin/withdrawals/" +
-      encodeURIComponent(reference) +
-      "/reject",
-      {
-        method: "POST",
-        headers: headers(true),
-        body: JSON.stringify({
-          note
-        })
-      }
-    );
-
-    alert(
-      data.message ||
-      "Withdrawal rejected"
-    );
-
-    await load();
-
-  } catch (err) {
-    alert(err.message);
-  }
-}
-
-
-async function markWithdrawalPaid(
-  reference
-) {
-
-  if (!confirm(
-    "Only continue after the EFT has actually been sent. Mark this withdrawal as paid?"
-  )) {
-    return;
-  }
-
-  try {
-
-    const data = await api(
-      "/api/admin/withdrawals/" +
-      encodeURIComponent(reference) +
-      "/paid",
-      {
-        method: "POST",
-        headers: headers(true),
-        body: JSON.stringify({})
-      }
-    );
-
-    alert(
-      data.message ||
-      "Withdrawal marked paid"
-    );
-
-    await load();
-
-  } catch (err) {
-    alert(err.message);
-  }
-}
-
-
-async function loadTransactions() {
-  const transactions = await api("/api/admin/transactions", {
-    headers: headers()
-  });
-
-  document.getElementById("transactions").innerHTML =
-    transactions.length
-      ? transactions.map(t => `
-        <div class="card">
-          <strong>${esc(t.reference)}</strong>
-          <p>${esc(t.email)}</p>
-          <p>${esc(t.type)}</p>
-          <p>${money(t.amount)}</p>
-          <p>Status: ${esc(t.status)}</p>
-        </div>
-      `).join("")
-      : "<p>No transactions found.</p>";
-}
-
-async function approvePayment(id) {
-  const note = prompt(
-    "Admin note:",
-    "Bank EFT manually verified"
-  );
-
-  if (note === null) return;
-
-  try {
-    const data = await api(
-      "/api/admin/payments/" + encodeURIComponent(id) + "/approve",
-      {
-        method: "POST",
-        headers: headers(true),
-        body: JSON.stringify({ note })
-      }
-    );
-
-    alert(data.message || "Payment approved");
-    await load();
-  } catch (err) {
-    alert(err.message);
-  }
-}
-
-async function rejectPayment(id) {
-  const note = prompt(
-    "Reason for rejection:",
-    "Payment rejected"
-  );
-
-  if (note === null) return;
-
-  try {
-    const data = await api(
-      "/api/admin/payments/" + encodeURIComponent(id) + "/reject",
-      {
-        method: "POST",
-        headers: headers(true),
-        body: JSON.stringify({ note })
-      }
-    );
-
-    alert(data.message || "Payment rejected");
-    await load();
-  } catch (err) {
-    alert(err.message);
-  }
-}
-
-async function load() {
-  const status = document.getElementById("status");
-
-  try {
-    status.textContent = "Loading operations data...";
-
-    await Promise.all([
-      loadUsers(),
-      loadPayments(),
-      loadInvestments(),
-      loadWithdrawals(),
-      loadTransactions()
-    ]);
-
-    status.textContent = "";
-  } catch (err) {
-    console.error(err);
-    status.textContent = err.message;
-  }
-}
-
-function logout() {
-  localStorage.removeItem("timb3rToken");
-  location.href = "/login.html";
-}
-
-load();
+requireAdmin().catch(err=>{
+  document.getElementById("status").textContent=err.message;
+});
 </script>
 
 </body>

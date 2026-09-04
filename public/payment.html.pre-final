@@ -1,0 +1,366 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+
+<title>TIMB3R — Fund Account</title>
+
+<style>
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: #f4f7f2;
+  color: #172219;
+  font-family: Inter, system-ui, sans-serif;
+}
+
+header {
+  background: #12351c;
+  color: white;
+  padding: 20px 6%;
+}
+
+.logo {
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: 2px;
+}
+
+main {
+  max-width: 700px;
+  margin: 40px auto;
+  padding: 0 20px;
+}
+
+.card {
+  background: white;
+  border-radius: 18px;
+  padding: 25px;
+  margin-bottom: 20px;
+  box-shadow: 0 8px 30px rgba(0,0,0,.07);
+}
+
+h1 {
+  margin-top: 0;
+}
+
+.bank-row {
+  padding: 15px 0;
+  border-bottom: 1px solid #e5e9e5;
+}
+
+.bank-row:last-child {
+  border-bottom: 0;
+}
+
+.label {
+  font-size: 12px;
+  color: #68736b;
+  margin-bottom: 5px;
+}
+
+.value {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.reference {
+  background: #edf6ee;
+  border: 2px solid #b8d7bd;
+  border-radius: 12px;
+  padding: 18px;
+  margin-top: 15px;
+}
+
+input {
+  width: 100%;
+  padding: 13px;
+  border: 1px solid #ccd4cd;
+  border-radius: 10px;
+  margin-top: 7px;
+  margin-bottom: 15px;
+  font-size: 16px;
+}
+
+button {
+  width: 100%;
+  padding: 15px;
+  border: 0;
+  border-radius: 11px;
+  background: #12351c;
+  color: white;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: .6;
+}
+
+#status {
+  display: none;
+  padding: 13px;
+  border-radius: 10px;
+  margin-bottom: 15px;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <div class="logo">TIMB3R</div>
+</header>
+
+<main>
+
+<div class="card">
+
+<h1>Fund your account</h1>
+
+<p>
+Make an EFT to the TIMB3R bank account below.
+Your payment reference is unique to your account.
+</p>
+
+<div id="status"></div>
+
+<div class="bank-row">
+  <div class="label">Bank</div>
+  <div class="value" id="bank">Loading...</div>
+</div>
+
+<div class="bank-row">
+  <div class="label">Account name</div>
+  <div class="value" id="accountName">Loading...</div>
+</div>
+
+<div class="bank-row">
+  <div class="label">Account number</div>
+  <div class="value" id="accountNumber">Loading...</div>
+</div>
+
+<div class="bank-row">
+  <div class="label">Branch code</div>
+  <div class="value" id="branchCode">Loading...</div>
+</div>
+
+<div class="reference">
+  <div class="label">YOUR PAYMENT REFERENCE</div>
+  <div class="value" id="reference">Loading...</div>
+</div>
+
+</div>
+
+
+<div class="card">
+
+<h2>Submit EFT for verification</h2>
+
+<form id="paymentForm">
+
+<label>
+Amount
+<input
+  id="amount"
+  type="number"
+  min="1"
+  step="0.01"
+  placeholder="1000.00"
+  required
+>
+</label>
+
+<label>
+Sender name
+<input
+  id="senderName"
+  type="text"
+  placeholder="Name used on the bank account"
+>
+</label>
+
+<label>
+Sender bank
+<input
+  id="senderBank"
+  type="text"
+  placeholder="Your bank"
+>
+</label>
+
+<label>
+Payment date
+<input
+  id="paymentDate"
+  type="datetime-local"
+>
+</label>
+
+<label>
+Payment proof link
+<input
+  id="proofUrl"
+  type="url"
+  placeholder="https://..."
+  required
+>
+</label>
+
+<button id="submitBtn" type="submit">
+Submit EFT for verification
+</button>
+
+</form>
+
+</div>
+
+</main>
+
+
+<script>
+
+const token = localStorage.getItem("timb3rToken");
+
+if (!token) {
+  window.location.href = "/";
+}
+
+const statusBox = document.getElementById("status");
+
+function showStatus(message, error = false) {
+  statusBox.style.display = "block";
+  statusBox.textContent = message;
+  statusBox.style.background = error ? "#fdecec" : "#edf6ee";
+  statusBox.style.color = error ? "#8b1e1e" : "#185c27";
+}
+
+
+async function loadBankDetails() {
+
+  try {
+
+    const response = await fetch(
+      "/api/payments/bank-details",
+      {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || "Unable to load bank details");
+    }
+
+    document.getElementById("bank").textContent =
+      data.bank;
+
+    document.getElementById("accountName").textContent =
+      data.accountName;
+
+    document.getElementById("accountNumber").textContent =
+      data.accountNumber;
+
+    document.getElementById("branchCode").textContent =
+      data.branchCode;
+
+    document.getElementById("reference").textContent =
+      data.reference;
+
+  } catch (error) {
+
+    showStatus(error.message, true);
+
+  }
+}
+
+
+document
+  .getElementById("paymentForm")
+  .addEventListener("submit", async function(event) {
+
+    event.preventDefault();
+
+    const button =
+      document.getElementById("submitBtn");
+
+    button.disabled = true;
+    button.textContent = "Submitting...";
+
+    try {
+
+      const response = await fetch(
+        "/api/payments/bank",
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`
+          },
+
+          body: JSON.stringify({
+
+            amount:
+              document.getElementById("amount").value,
+
+            senderName:
+              document.getElementById("senderName").value,
+
+            senderBank:
+              document.getElementById("senderBank").value,
+
+            paymentDate:
+              document.getElementById("paymentDate").value,
+
+            proofUrl:
+              document.getElementById("proofUrl").value.trim()
+
+          })
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.error || "Payment submission failed"
+        );
+      }
+
+      showStatus(
+        "Payment submitted successfully. TIMB3R will verify your EFT before your account is credited."
+      );
+
+      document
+        .getElementById("paymentForm")
+        .reset();
+
+    } catch (error) {
+
+      showStatus(error.message, true);
+
+    } finally {
+
+      button.disabled = false;
+      button.textContent = "Submit EFT for verification";
+
+    }
+
+  });
+
+
+loadBankDetails();
+
+</script>
+
+</body>
+</html>

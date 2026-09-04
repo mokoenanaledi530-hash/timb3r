@@ -1,0 +1,111 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Admin Transactions</title>
+<link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+
+<nav class="main-nav">
+<div class="brand">TIMB3R ADMIN</div>
+<div class="nav-links">
+<a href="/admin.html">Overview</a>
+<a href="/admin-investors.html">Investors</a>
+<a href="/admin-deposits.html">Deposits</a>
+<a href="/admin-investments.html">Investments</a>
+<a href="/admin-withdrawals.html">Withdrawals</a>
+<a href="#" onclick="logout()">Logout</a>
+</div>
+</nav>
+
+<main class="container admin-page">
+
+<h1>Transactions</h1>
+
+<div id="transactions">
+Loading...
+</div>
+
+<div id="status" class="status"></div>
+
+</main>
+
+<script src="/admin-common.js"></script>
+
+<script>
+
+(async()=>{
+
+try{
+
+await requireAdmin();
+
+const rows=
+await api(
+"/api/admin/transactions",
+{headers:headers()}
+);
+
+document.getElementById(
+"transactions"
+).innerHTML=
+
+rows.length
+
+? rows.map(t=>`
+<div class="card admin-record">
+
+<strong>
+${esc(t.reference)}
+</strong>
+
+<p>
+${esc(t.email)}
+</p>
+
+<p>
+Type:
+${esc(t.type)}
+</p>
+
+<p>
+Amount:
+${money(t.amount)}
+</p>
+
+<p>
+Status:
+${esc(t.status)}
+</p>
+
+<p>
+Date:
+${t.created_at
+? new Date(t.created_at)
+.toLocaleString("en-ZA")
+: "-"
+}
+</p>
+
+</div>
+`).join("")
+
+:"<p>No transactions found.</p>";
+
+}catch(err){
+
+document.getElementById(
+"status"
+).textContent=
+err.message;
+
+}
+
+})();
+
+</script>
+
+</body>
+</html>

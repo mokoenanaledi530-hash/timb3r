@@ -1,0 +1,84 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Admin Investors</title>
+<link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+
+<nav class="main-nav">
+<div class="brand">TIMB3R ADMIN</div>
+<div class="nav-links">
+<a href="/admin.html">Overview</a>
+<a href="/admin-deposits.html">Deposits</a>
+<a href="/admin-investments.html">Investments</a>
+<a href="/admin-withdrawals.html">Withdrawals</a>
+<a href="#" onclick="logout()">Logout</a>
+</div>
+</nav>
+
+<main class="container admin-page">
+
+<h1>Investors</h1>
+
+<div id="users">Loading...</div>
+<div id="status" class="status"></div>
+
+</main>
+
+<script src="/admin-common.js"></script>
+
+<script>
+(async()=>{
+try{
+
+await requireAdmin();
+
+const users=
+await api(
+"/api/admin/users",
+{headers:headers()}
+);
+
+document.getElementById("users").innerHTML=
+users.length
+? users.map(u=>`
+<div class="card admin-record">
+
+<strong>${esc(u.name)}</strong>
+
+<p>${esc(u.email)}</p>
+
+<p>
+Role:
+${esc(u.role)}
+</p>
+
+<p>
+KYC:
+${esc(u.kyc_status)}
+</p>
+
+<p>
+Joined:
+${u.created_at
+? new Date(u.created_at).toLocaleString("en-ZA")
+: "-"
+}
+</p>
+
+</div>
+`).join("")
+:"<p>No investors found.</p>";
+
+}catch(err){
+document.getElementById("status").textContent=
+err.message;
+}
+})();
+</script>
+
+</body>
+</html>

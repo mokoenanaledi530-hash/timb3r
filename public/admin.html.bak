@@ -1,0 +1,132 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport"
+content="width=device-width,initial-scale=1">
+<title>TIMB3R Admin</title>
+<link rel="stylesheet" href="/styles.css">
+</head>
+
+<body>
+
+<nav>
+<div class="brand">
+TIMB3R ADMIN
+</div>
+
+<a href="#"
+onclick="logout()">
+Logout
+</a>
+</nav>
+
+<main class="container">
+
+<h1>
+Operations Dashboard
+</h1>
+
+<h2>
+Users
+</h2>
+
+<div id="users">
+Loading...
+</div>
+
+<h2>
+Investment applications
+</h2>
+
+<div id="investments">
+Loading...
+</div>
+
+</main>
+
+<script>
+
+const token =
+localStorage.getItem(
+  "timb3rToken"
+);
+
+function headers(){
+  return {
+    "Authorization":
+      "Bearer "+token
+  };
+}
+
+async function load(){
+
+  const userRes =
+    await fetch(
+      "/api/admin/users",
+      {headers:headers()}
+    );
+
+  if(!userRes.ok){
+    location.href =
+      "/dashboard.html";
+    return;
+  }
+
+  const users =
+    await userRes.json();
+
+  document.getElementById(
+    "users"
+  ).innerHTML =
+    users.map(
+      u => `
+      <div class="card">
+      <strong>${u.full_name}</strong>
+      <p>${u.email}</p>
+      <p>${u.role}</p>
+      <p>KYC: ${u.kyc_status}</p>
+      </div>
+      `
+    ).join("");
+
+  const invRes =
+    await fetch(
+      "/api/admin/investments",
+      {headers:headers()}
+    );
+
+  const investments =
+    await invRes.json();
+
+  document.getElementById(
+    "investments"
+  ).innerHTML =
+    investments.map(
+      i => `
+      <div class="card">
+      <strong>${i.email}</strong>
+      <p>
+      ${i.name} ${i.phase || ""}
+      </p>
+      <p>R${i.principal}</p>
+      <p>${i.status}</p>
+      </div>
+      `
+    ).join("");
+}
+
+function logout(){
+  localStorage.removeItem(
+    "timb3rToken"
+  );
+
+  location.href="/login.html";
+}
+
+load();
+
+</script>
+
+</body>
+</html>

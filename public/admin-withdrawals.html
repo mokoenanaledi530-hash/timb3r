@@ -1,0 +1,286 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Admin Withdrawals</title>
+<link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+
+<nav class="main-nav">
+<div class="brand">TIMB3R ADMIN</div>
+<div class="nav-links">
+<a href="/admin.html">Overview</a>
+<a href="/admin-investors.html">Investors</a>
+<a href="/admin-deposits.html">Deposits</a>
+<a href="/admin-investments.html">Investments</a>
+<a href="#" onclick="logout()">Logout</a>
+</div>
+</nav>
+
+<main class="container admin-page">
+
+<h1>Withdrawal Requests</h1>
+
+<p class="small">
+Approve for payment first.
+Only mark paid after the EFT has actually been sent.
+</p>
+
+<div id="withdrawals">
+Loading...
+</div>
+
+<div id="status" class="status"></div>
+
+</main>
+
+<script src="/admin-common.js"></script>
+
+<script>
+
+async function load(){
+
+try{
+
+await requireAdmin();
+
+const rows=
+await api(
+"/api/admin/withdrawals",
+{headers:headers()}
+);
+
+document.getElementById(
+"withdrawals"
+).innerHTML=
+
+rows.length
+
+? rows.map(w=>`
+<div class="card admin-record">
+
+<strong>
+${esc(w.investor_name)}
+</strong>
+
+<p>
+${esc(w.investor_email)}
+</p>
+
+<p>
+Amount:
+${money(w.amount)}
+</p>
+
+<p>
+Reference:
+${esc(w.reference)}
+</p>
+
+<p>
+Status:
+${esc(w.status)}
+</p>
+
+<hr>
+
+<strong>
+Payout bank
+</strong>
+
+<p>
+Account holder:
+${esc(w.account_holder || "-")}
+</p>
+
+<p>
+Bank:
+${esc(w.bank_name || "-")}
+</p>
+
+<p>
+Account type:
+${esc(w.account_type || "-")}
+</p>
+
+<p>
+Account number:
+${esc(w.account_number || "-")}
+</p>
+
+<p>
+Branch code:
+${esc(w.branch_code || "-")}
+</p>
+
+${w.status==="pending"
+? `
+<div class="admin-actions">
+
+<button
+onclick="approveWithdrawal('${w.reference}')">
+Approve for payment
+</button>
+
+<button
+onclick="rejectWithdrawal('${w.reference}')">
+Reject
+</button>
+
+</div>
+`
+:""
+}
+
+${w.status==="processing"
+? `
+<div class="admin-actions">
+
+<button
+onclick="markPaid('${w.reference}')">
+Mark paid
+</button>
+
+<button
+onclick="rejectWithdrawal('${w.reference}')">
+Reject
+</button>
+
+</div>
+`
+:""
+}
+
+</div>
+`).join("")
+
+:"<p>No withdrawal requests found.</p>";
+
+}catch(err){
+
+document.getElementById(
+"status"
+).textContent=
+err.message;
+
+}
+
+}
+
+async function approveWithdrawal(reference){
+
+if(!confirm(
+"Approve this withdrawal for EFT payment?"
+))return;
+
+try{
+
+const data=
+await api(
+"/api/admin/withdrawals/"+
+encodeURIComponent(reference)+
+"/approve",
+{
+method:"POST",
+headers:headers(true),
+body:"{}"
+}
+);
+
+alert(
+data.message ||
+"Withdrawal approved"
+);
+
+await load();
+
+}catch(err){
+
+alert(err.message);
+
+}
+
+}
+
+async function rejectWithdrawal(reference){
+
+const note=
+prompt(
+"Reason for rejection:",
+"Withdrawal rejected"
+);
+
+if(note===null)return;
+
+try{
+
+const data=
+await api(
+"/api/admin/withdrawals/"+
+encodeURIComponent(reference)+
+"/reject",
+{
+method:"POST",
+headers:headers(true),
+body:JSON.stringify({note})
+}
+);
+
+alert(
+data.message ||
+"Withdrawal rejected"
+);
+
+await load();
+
+}catch(err){
+
+alert(err.message);
+
+}
+
+}
+
+async function markPaid(reference){
+
+if(!confirm(
+"Only continue after the EFT has actually been sent. Mark as paid?"
+))return;
+
+try{
+
+const data=
+await api(
+"/api/admin/withdrawals/"+
+encodeURIComponent(reference)+
+"/paid",
+{
+method:"POST",
+headers:headers(true),
+body:"{}"
+}
+);
+
+alert(
+data.message ||
+"Withdrawal marked paid"
+);
+
+await load();
+
+}catch(err){
+
+alert(err.message);
+
+}
+
+}
+
+load();
+
+</script>
+
+</body>
+</html>

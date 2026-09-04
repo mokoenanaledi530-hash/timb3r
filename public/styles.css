@@ -342,3 +342,63 @@ select{
   font-weight:700;
   margin:10px 20px 14px;
 }
+
+/* ADMIN SCREENS */
+
+.admin-page{
+  padding-top:28px;
+  padding-bottom:60px;
+}
+
+.admin-grid{
+  display:grid;
+  grid-template-columns:
+    repeat(auto-fit,minmax(220px,1fr));
+  gap:16px;
+  margin:24px 0;
+}
+
+.admin-menu-card{
+  display:block;
+  color:var(--text);
+  text-decoration:none;
+}
+
+.admin-menu-card h2{
+  color:var(--accent);
+  margin-top:0;
+}
+
+.admin-record{
+  margin-bottom:14px;
+}
+
+.admin-actions{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-top:14px;
+}
+
+.admin-actions button,
+.admin-record button{
+  background:var(--accent);
+  color:#07140f;
+  border:0;
+  padding:11px 14px;
+  border-radius:10px;
+  font-weight:bold;
+  cursor:pointer;
+}
+
+.admin-record a{
+  color:var(--accent);
+}
+
+@media(max-width:700px){
+
+  .admin-grid{
+    grid-template-columns:1fr;
+  }
+
+}
